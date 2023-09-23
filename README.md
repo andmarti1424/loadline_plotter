@@ -1,13 +1,13 @@
 # loadline_plotter
 ## andmarti1424 Vacuum valves loadline plotter
 
-<img src="screenshots/e88cc.jpg" width="400">
+<img src="screenshots/e88cc.png" width="400">
 
 This is a loadline plotter based on ideas taken from Merlin's Blencowe and VTADIY ones.
 This is totally free for you to use it. License is GPLv3.
 
 ## Usage
-```python load.py```
+```python plotter.py```
 
 ## Adding valves
 Its easy to add new valves info. All you need is to specify curves data in the following format:
