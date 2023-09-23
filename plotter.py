@@ -1,3 +1,9 @@
+"""
+maxX, maxY
+import specs per tube
+picture
+gain and freq. response calculations
+"""
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
@@ -10,6 +16,8 @@ DEFAULT_VALVE = 'E88CC'
 DEFAULT_VSUPPLY = 265
 DEFAULT_Ra = 33000
 DEFAULT_Rk = 560
+DEFAULT_XMAX = 300
+DEFAULT_YMAX = 20
 
 class mclass:
     def __init__(self,  window):
@@ -18,7 +26,8 @@ class mclass:
         self.fig = Figure(figsize=(13,9))
         self.ax = self.fig.add_subplot(111)
 
-        self.read_conf()
+        self.read_valvedata()
+        self.read_valvespecs()
 
         window.columnconfigure(0, weight=1)
         window.columnconfigure(1, weight=1)
@@ -73,11 +82,24 @@ class mclass:
         self.lbl_Vgkval = Label(window, textvariable=self.str_Vgk, font=('Courier New', 18), width=10, anchor="w")
         self.lbl_Vgkval.grid(row=7, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
+        self.lbl_Xmax = Label(window, text="Xmax, V", font=('Courier New', 12), background=self.window['bg'])
+        self.lbl_Xmax.grid(row=8, column=0, rowspan=1, sticky=W, padx=50, pady=5)
+        self.str_Xmax = StringVar()
+        self.str_Xmax.set(DEFAULT_XMAX)
+        self.etr_Xmax = Entry(window, textvariable=self.str_Xmax, font=('Courier New', 18), width=10)
+        self.etr_Xmax.grid(row=8, column=1, rowspan=1, sticky=W, padx=2, pady=5)
+
+        self.lbl_Ymax = Label(window, text="Ymax, mA", font=('Courier New', 12), background=self.window['bg'])
+        self.lbl_Ymax.grid(row=9, column=0, rowspan=1, sticky=W, padx=50, pady=5)
+        self.str_Ymax = StringVar()
+        self.str_Ymax.set(DEFAULT_YMAX)
+        self.etr_Ymax = Entry(window, textvariable=self.str_Ymax, font=('Courier New', 18), width=10)
+        self.etr_Ymax.grid(row=9, column=1, rowspan=1, sticky=W, padx=2, pady=5)
+
         # coordinates
         self.txt_coordinates = Text(bd=0, bg=window['bg'], fg='red', height=1, wrap="none", state="normal", font=('Courier New', 12), background=self.window['bg'])
-        self.txt_coordinates.grid(row=8, column=1, columnspan=2, rowspan=1, sticky=W, padx=2, pady=5)
+        self.txt_coordinates.grid(row=12, column=1, columnspan=2, rowspan=1, sticky=W, padx=2, pady=5)
         self.txt_coordinates.config(highlightthickness = 0, borderwidth=0)
-
 
         self.title = Label(window, text='andmarti Loadline Plotter', fg='#1C5AAC', font=('Courier New', 24, 'bold'))
         self.title.grid(row=0, column=0, columnspan=5, padx=10, sticky=N)
@@ -132,7 +154,21 @@ class mclass:
     def quit(self):
         Tk().quit()
 
-    def read_conf(self):
+    def read_valvespecs(self):
+        pass
+        #E88CC
+        #xmax = 300
+        #ymax = 20
+
+        #ECC83
+        #xmax = 350
+        #ymax = 5
+
+        #ECC82
+        #xmax = 350
+        #ymax = 25
+
+    def read_valvedata(self):
         pd.set_option('display.float_format', '{:20,.20f}'.format)
         pd.set_option('display.max_rows', None)
         pd.set_option('display.max_columns', None)
@@ -169,39 +205,20 @@ class mclass:
     def change_state(self):
         #print(res)
 
-        #E88CC
-        xmax = 300
-        ymax = 20
-
-        #ECC83
-        #xmax = 350
-        #ymax = 5
-
-        #ECC82
-        #xmax = 350
-        #ymax = 25
-
+        ymax = int(self.str_Ymax.get())
+        xmax = int(self.str_Xmax.get())
 
         #select valve
         df = self.df
         valve = self.str_valve.get()
         de=df.loc[df['valve']  == valve ]
-        #de=df.loc[df['valve']  == 'ECC83' ]
-        #de=df.loc[df['valve']  == 'ECC82' ]
-
 
         #plot grid curves
-        #self.fig, ax = plt.subplots(figsize=(13, 8))
-        #canvas = FigureCanvasTkAgg(self.fig, master=self.window)
-        #canvas.get_tk_widget().grid(row=2, column=2, sticky=W, padx=5, pady=5)
         self.plot_packed = 1
         self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
-        #ax.yaxis.set_ticks(np.arange(0, 0, 100), fontsize=20) # la escala del eje Y cada 0.5 entre 0 y 5
         self.ax.set_title(valve, fontsize=18)
         self.ax.set_ylabel('Ia, mA', fontsize=16, loc='center')
         self.ax.set_xlabel('Va, V', fontsize=16, loc='center')
-        #ax.set_xticks([0,100,200,300,400,500], ["0", "100", "200", "300", "400", "500"])
-        #fig, ax = plt.subplots()
 
         """
         #por regresion lineal
@@ -291,12 +308,8 @@ class mclass:
         self.vgk = - self.iq / 1000 * float(self.str_Rk.get())
         self.str_Vgk.set(format(self.vgk, ".2f"))
 
-        #pointer TODO
-
         self.ax.legend()
-        #plt.show()
         self.canvas.draw()
-        #exit(0)
 
 window = Tk()
 start = mclass(window)
