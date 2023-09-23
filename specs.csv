@@ -1,6 +1,0 @@
-#TUBE, SPECS, Pmax (W), Va max (V), mu, ra (Ohms), Cga (pF), Cg to all except anode (pF)
-E88CC, SPECS, 1.5, 220, 33, 2650, 1.4, 3.1
-ECC82, SPECS, 2.75, 300, 19, 7800, 1.5, 1.8
-ECC83, SPECS, 1, 300, 100, 62500, 1.6, 1.6
-ECC81, SPECS, 2.5, 300, 60, 11000, 1.6, 2.3
-12AY7, SPECS, 1.65, 330, 44, 25000, 1.4, 1.5
