@@ -1,7 +1,9 @@
 """
-maxX, maxY
-import specs per tube
-picture
+TODO
+import specs per valve
+add validations of user input
+auto refresh when changing data
+add picture
 gain and freq. response calculations
 """
 import pandas as pd
