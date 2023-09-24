@@ -1,7 +1,5 @@
 """
 TODO
-add validations of user input
-auto refresh when changing data (without having to press PLOT)
 add titles over grid curves
 add picture
 gain and freq. response calculations
@@ -140,7 +138,23 @@ class mclass:
         self.button_clear.place(x=293, y=680)
         self.but_export = Button(window, text="EXPORT", command=self.export, font=('Courier New', 18))
         self.but_export.place(x=420, y=680)
+
+        # bind focus out events
+        self.etr_Xmax.bind("<FocusOut>", self.parameters_changed)
+        self.etr_Ra.bind("<FocusOut>", self.parameters_changed)
+        self.etr_supply.bind("<FocusOut>", self.parameters_changed)
+        self.etr_Rk.bind("<FocusOut>", self.parameters_changed)
+        self.etr_Ymax.bind("<FocusOut>", self.parameters_changed)
+
+        self.etr_Xmax.bind("<Return>", self.parameters_changed)
+        self.etr_Ra.bind("<Return>", self.parameters_changed)
+        self.etr_supply.bind("<Return>", self.parameters_changed)
+        self.etr_Rk.bind("<Return>", self.parameters_changed)
+        self.etr_Ymax.bind("<Return>", self.parameters_changed)
         #end of ui
+
+    def parameters_changed(self, event):
+        self.change_state()
 
     def valve_changed(self, event):
         self.updateMaxXY()
@@ -212,7 +226,15 @@ class mclass:
             self.txt_coordinates.delete('1.0', END)
             self.txt_coordinates.insert(END, "(%s V, %s mA)" % (x, y))
 
+    # function to plot loadline or refresh plot
     def change_state(self):
+        # check values are valid
+        if  self.can_convert_to_float(self.etr_Xmax.get()) == False: return
+        if  self.can_convert_to_float(self.etr_Ra.get()) == False: return
+        if  self.can_convert_to_float(self.etr_supply.get()) == False: return
+        if  self.can_convert_to_float(self.etr_Rk.get()) == False: return
+        if  self.can_convert_to_float(self.etr_Ymax.get()) == False: return
+
         self.clear_chart()
 
         #print(res)
@@ -322,6 +344,14 @@ class mclass:
 
         self.ax.legend()
         self.canvas.draw()
+
+    def can_convert_to_float(self, string):
+        try:
+            result = float(string)
+            return True
+        except ValueError:
+            return False
+
 
 window = Tk()
 start = mclass(window)
