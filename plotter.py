@@ -1,7 +1,8 @@
 """
 TODO
 add validations of user input
-auto refresh when changing data
+auto refresh when changing data (without having to press PLOT)
+add titles over grid curves
 add picture
 gain and freq. response calculations
 """
@@ -19,6 +20,8 @@ DEFAULT_VSUPPLY = 265
 DEFAULT_Ra = 33000
 DEFAULT_Rk = 560
 DEBUG = 1
+DEFAULT_XMAX = 300
+DEFAULT_YMAX = 10
 
 class mclass:
     def __init__(self,  window):
@@ -26,10 +29,11 @@ class mclass:
         self.fig = Figure(figsize=(13,9))
         self.ax = self.fig.add_subplot(111)
 
+        # read valve specs and grid lines from csv
         self.read_valvedata()
         self.read_valvespecs()
 
-
+        # build UI
         window.columnconfigure(0, weight=1)
         window.columnconfigure(1, weight=1)
         window.columnconfigure(2, weight=3)
@@ -43,12 +47,7 @@ class mclass:
         self.cmb_valve = ttk.Combobox(window, values=self.df['valve'].drop_duplicates().values.tolist(), textvariable=self.str_valve, font=('Courier New', 12), width=13)
         self.cmb_valve['state'] = 'readonly'
         self.cmb_valve.grid(row=1, column=1, sticky=W, padx=5, pady=5)
-
-        # Read XMAX and YMAX from specs
-        valve = self.str_valve.get()
-        d=self.specs.loc[self.specs['valve']  == valve ]
-        DEFAULT_XMAX = d['DefaultXmax'].iloc[0]
-        DEFAULT_YMAX = d['DefaultYmax'].iloc[0]
+        self.cmb_valve.bind('<<ComboboxSelected>>', self.valve_changed)
 
         self.lbl_supply = Label(window, text="Vsupply, V", font=('Courier New', 12), background=self.window['bg'], width=20, anchor='w')
         self.lbl_supply.grid(row=2, column=0, rowspan=1, sticky=W, padx=50, pady=5)
@@ -103,6 +102,9 @@ class mclass:
         self.etr_Ymax = Entry(window, textvariable=self.str_Ymax, font=('Courier New', 18), width=10)
         self.etr_Ymax.grid(row=9, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
+        # Read XMAX and YMAX from specs
+        self.updateMaxXY()
+
         # coordinates
         self.txt_coordinates = Text(bd=0, bg=window['bg'], fg='red', height=1, wrap="none", state="normal", font=('Courier New', 12), background=self.window['bg'])
         self.txt_coordinates.grid(row=12, column=1, columnspan=2, rowspan=1, sticky=W, padx=2, pady=5)
@@ -114,13 +116,11 @@ class mclass:
 
         # plot
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.window)
-        self.canvas.get_tk_widget().grid(row=1, column=4, rowspan=40, columnspan=4, sticky=W, padx=0, pady=50)
+        self.canvas.get_tk_widget().grid(row=1, column=4, rowspan=40, columnspan=3, sticky=W, padx=0, pady=50)
         self.canvas.mpl_connect('motion_notify_event', self.motion_hover)
         self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
         self.ax.set_ylabel('Ia, mA', fontsize=16, loc='center')
         self.ax.set_xlabel('Va, V', fontsize=16, loc='center')
-        self.ax.set_ylim(0, d['DefaultYmax'].iloc[0])
-        self.ax.set_xlim(0, d['DefaultXmax'].iloc[0])
 
         fm = Frame(window)
         self.lbl_cathodeloadline = Label(fm, text="Cathode loadline", font=('Courier New', 12), wraplength=150, justify='right', background=self.window['bg'])
@@ -131,18 +131,7 @@ class mclass:
         self.chk_cathodeloadline.grid(row = 0, column = 1)
         fm.grid(row=40, column=0, padx=0, pady=0)
 
-        #self.chk_display.pack(side=RIGHT)
-        #self.lbl_display.pack(side=RIGHT)
-        # debug check
-        #self.lbl_debug = Label(fm, text="debug", font=('Courier New', 12), wraplength=150, justify='right', background=self.window['bg'])
-        #self.chk_debug_var = IntVar()
-        #self.chk_debug = Checkbutton(fm, variable=self.chk_debug_var, onvalue = 1, offvalue = 0, height=1, font=('Courier New', 12), command=self.chk_debug_click, background=self.window['bg'], width=3, anchor='w')
-        #if DEBUG: self.chk_debug.select()
-        #self.chk_debug.pack(side=RIGHT)
-        #self.lbl_debug.pack(side=RIGHT)
-        #fm.pack(side=BOTTOM, anchor="se", padx=10, pady=20)
-
-         #BUTTONS
+        #BUTTONS
         self.button_quit = Button(window, text="QUIT", command=self.quit, font=('Courier New', 18))
         self.button_quit.place(x=40, y=680)
         self.button_start = Button(window, text="PLOT", command=self.change_state, font=('Courier New', 18))
@@ -153,9 +142,25 @@ class mclass:
         self.but_export.place(x=420, y=680)
         #end of ui
 
+    def valve_changed(self, event):
+        self.updateMaxXY()
+        self.change_state()
+
+    def updateMaxXY(self):
+        valve = self.str_valve.get()
+        d=self.specs.loc[self.specs['valve']  == valve ]
+        DEFAULT_XMAX = d['DefaultXmax'].iloc[0]
+        DEFAULT_YMAX = d['DefaultYmax'].iloc[0]
+        self.ax.set_ylim(0, d['DefaultYmax'].iloc[0])
+        self.ax.set_xlim(0, d['DefaultXmax'].iloc[0])
+        self.str_Ymax.set(DEFAULT_YMAX)
+        self.str_Xmax.set(DEFAULT_XMAX)
 
     def clear_chart(self):
         self.ax.clear() # clear previous plot !!!!
+        self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
+        self.ax.set_ylabel('Ia, mA', fontsize=16, loc='center')
+        self.ax.set_xlabel('Va, V', fontsize=16, loc='center')
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
@@ -163,7 +168,7 @@ class mclass:
         pass
 
     def chk_cathodeloadline_click(self):
-        pass
+        self.change_state()
 
     def quit(self):
         Tk().quit()
