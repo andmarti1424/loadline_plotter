@@ -13,7 +13,7 @@ This is totally free for you to use it. License is GPLv3.
 Its easy to add new valves info. All you need is to specify curves data in the following format and it to valves_data.csv:
 
 ```
-#TUBE, GRIDCURVE, Xvalue, Yvalue, Xvalue2, Yvalue2, etc
+#VALVE, GRIDCURVE, Xvalue, Yvalue, Xvalue2, Yvalue2, etc
 E88CC, 0, 0, 0, 25, 7, 50, 15
 E88CC, -1, 0, 0, 25, 0.7, 50, 5.5, 75, 13
 E88CC, -2, 25, 0, 50, 0.3, 75, 4, 100, 10.1, 125, 19

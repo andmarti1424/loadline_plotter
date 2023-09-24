@@ -1,6 +1,5 @@
 """
 TODO
-import specs per valve
 add validations of user input
 auto refresh when changing data
 add picture
@@ -14,22 +13,22 @@ from tkinter import *
 from tkinter import ttk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
 DEFAULT_VALVE = 'E88CC'
 DEFAULT_VSUPPLY = 265
 DEFAULT_Ra = 33000
 DEFAULT_Rk = 560
-DEFAULT_XMAX = 300
-DEFAULT_YMAX = 20
+DEBUG = 1
 
 class mclass:
     def __init__(self,  window):
         self.window = window
-        self.plot_packed = False
         self.fig = Figure(figsize=(13,9))
         self.ax = self.fig.add_subplot(111)
 
         self.read_valvedata()
         self.read_valvespecs()
+
 
         window.columnconfigure(0, weight=1)
         window.columnconfigure(1, weight=1)
@@ -44,6 +43,12 @@ class mclass:
         self.cmb_valve = ttk.Combobox(window, values=self.df['valve'].drop_duplicates().values.tolist(), textvariable=self.str_valve, font=('Courier New', 12), width=13)
         self.cmb_valve['state'] = 'readonly'
         self.cmb_valve.grid(row=1, column=1, sticky=W, padx=5, pady=5)
+
+        # Read XMAX and YMAX from specs
+        valve = self.str_valve.get()
+        d=self.specs.loc[self.specs['valve']  == valve ]
+        DEFAULT_XMAX = d['DefaultXmax'].iloc[0]
+        DEFAULT_YMAX = d['DefaultYmax'].iloc[0]
 
         self.lbl_supply = Label(window, text="Vsupply, V", font=('Courier New', 12), background=self.window['bg'], width=20, anchor='w')
         self.lbl_supply.grid(row=2, column=0, rowspan=1, sticky=W, padx=50, pady=5)
@@ -103,13 +108,19 @@ class mclass:
         self.txt_coordinates.grid(row=12, column=1, columnspan=2, rowspan=1, sticky=W, padx=2, pady=5)
         self.txt_coordinates.config(highlightthickness = 0, borderwidth=0)
 
+        # title
         self.title = Label(window, text='andmarti Loadline Plotter', fg='#1C5AAC', font=('Courier New', 24, 'bold'))
         self.title.grid(row=0, column=0, columnspan=5, padx=10, sticky=N)
 
+        # plot
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.window)
         self.canvas.get_tk_widget().grid(row=1, column=4, rowspan=40, columnspan=4, sticky=W, padx=0, pady=50)
         self.canvas.mpl_connect('motion_notify_event', self.motion_hover)
-
+        self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
+        self.ax.set_ylabel('Ia, mA', fontsize=16, loc='center')
+        self.ax.set_xlabel('Va, V', fontsize=16, loc='center')
+        self.ax.set_ylim(0, d['DefaultYmax'].iloc[0])
+        self.ax.set_xlim(0, d['DefaultXmax'].iloc[0])
 
         fm = Frame(window)
         self.lbl_cathodeloadline = Label(fm, text="Cathode loadline", font=('Courier New', 12), wraplength=150, justify='right', background=self.window['bg'])
@@ -142,6 +153,7 @@ class mclass:
         self.but_export.place(x=420, y=680)
         #end of ui
 
+
     def clear_chart(self):
         self.ax.clear() # clear previous plot !!!!
         self.fig.canvas.draw()
@@ -157,18 +169,9 @@ class mclass:
         Tk().quit()
 
     def read_valvespecs(self):
-        pass
-        #E88CC
-        #xmax = 300
-        #ymax = 20
-
-        #ECC83
-        #xmax = 350
-        #ymax = 5
-
-        #ECC82
-        #xmax = 350
-        #ymax = 25
+        df = pd.read_csv('valves_specs.csv', comment='#', sep=',',  engine='python', skipinitialspace=True)
+        #if DEBUG: print(df)
+        self.specs = df
 
     def read_valvedata(self):
         pd.set_option('display.float_format', '{:20,.20f}'.format)
@@ -195,7 +198,7 @@ class mclass:
         res = df.groupby(['valve', 'curve']).apply(lambda x: pd.Series(np.polyfit(x.x, x.y, 2), index=['a', 'b', 'c']))
         df = df.reset_index()
         self.df = pd.merge(df, res, how="inner", on=['valve', 'curve'])
-        #if debug: print(df)
+        #if DEBUG: print(df)
 
     def motion_hover(self, event):
         if event.inaxes is not None:
@@ -205,6 +208,8 @@ class mclass:
             self.txt_coordinates.insert(END, "(%s V, %s mA)" % (x, y))
 
     def change_state(self):
+        self.clear_chart()
+
         #print(res)
 
         ymax = int(self.str_Ymax.get())
@@ -216,11 +221,11 @@ class mclass:
         de=df.loc[df['valve']  == valve ]
 
         #plot grid curves
-        self.plot_packed = 1
-        self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
         self.ax.set_title(valve, fontsize=18)
-        self.ax.set_ylabel('Ia, mA', fontsize=16, loc='center')
-        self.ax.set_xlabel('Va, V', fontsize=16, loc='center')
+        self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
+        #self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
+        #self.ax.set_ylabel('Ia, mA', fontsize=16, loc='center')
+        #self.ax.set_xlabel('Va, V', fontsize=16, loc='center')
 
         """
         #por regresion lineal
