@@ -28,7 +28,7 @@ E88CC, -10, 250, 0, 275, 0.8, 300, 4.2
 E88CC, Pmax, 25, 60, 50, 30, 75, 20, 100, 15, 125, 12, 150, 10, 175, 8.571428571, 200, 7.5, 226.1, 6.63423264, 250, 6, 275, 5.454545455, 300, 5
 ```
 
-and a register in valves_specs.csv file with these data:
+and a register in valves_specs.csv file with the valve specs:
 ```
 valve, Pmax, VaMax, mu, ra, Cga, CgAEA, DefaultXmax, DefaultYmax
 E88CC, 1.5, 220, 33, 2650, 1.4, 3.1, 300, 20
