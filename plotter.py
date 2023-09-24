@@ -23,7 +23,7 @@ DEFAULT_YMAX = 10
 class mclass:
     def __init__(self,  window):
         self.window = window
-        self.fig = Figure(figsize=(13,9))
+        self.fig = Figure(figsize=(13,8))
         self.ax = self.fig.add_subplot(111)
 
         # read valve specs and grid lines from csv
@@ -99,13 +99,12 @@ class mclass:
         self.etr_Ymax = Entry(window, textvariable=self.str_Ymax, font=('Courier New', 18), width=10)
         self.etr_Ymax.grid(row=9, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        # Read XMAX and YMAX from specs
-        self.updateMaxXY()
 
         # coordinates
         self.txt_coordinates = Text(bd=0, bg=window['bg'], fg='red', height=1, wrap="none", state="normal", font=('Courier New', 12), background=self.window['bg'])
         self.txt_coordinates.grid(row=12, column=1, columnspan=2, rowspan=1, sticky=W, padx=2, pady=5)
         self.txt_coordinates.config(highlightthickness = 0, borderwidth=0)
+        self.txt_coordinates.config(state=DISABLED)
 
         # title
         self.title = Label(window, text='andmarti Loadline Plotter', fg='#1C5AAC', font=('Courier New', 24, 'bold'))
@@ -113,20 +112,29 @@ class mclass:
 
         # plot
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.window)
-        self.canvas.get_tk_widget().grid(row=1, column=4, rowspan=40, columnspan=3, sticky=W, padx=0, pady=50)
+        self.canvas.get_tk_widget().grid(row=1, column=4, rowspan=42, columnspan=3, sticky=W, padx=0, pady=40)
         self.canvas.mpl_connect('motion_notify_event', self.motion_hover)
         self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
-        self.ax.set_ylabel('Ia, mA', fontsize=16, loc='center')
-        self.ax.set_xlabel('Va, V', fontsize=16, loc='center')
+        self.ax.set_ylabel('Ia, mA', fontsize=16, loc='center', labelpad=20)
+        self.ax.set_xlabel('Va, V', fontsize=16, loc='center',  labelpad=20)
 
+        # bottom frame
         fm = Frame(window)
-        self.lbl_cathodeloadline = Label(fm, text="Cathode loadline", font=('Courier New', 12), wraplength=150, justify='right', background=self.window['bg'])
-        self.lbl_cathodeloadline.grid(row = 0, column = 0)
+        self.lbl_cathodeloadline = Label(fm, text="Cathode loadline", font=('Courier New', 12), background=self.window['bg'])
+        self.lbl_cathodeloadline.grid(row = 0, column = 0, pady=0, sticky='w')
         self.chk_cathodeloadline_var = IntVar()
-        self.chk_cathodeloadline = Checkbutton(fm, variable=self.chk_cathodeloadline_var, onvalue = 1, offvalue = 0, height=1, font=('Courier New', 12), command=self.chk_cathodeloadline_click, background=self.window['bg'], width=3, anchor="w")
+        self.chk_cathodeloadline = Checkbutton(fm, variable=self.chk_cathodeloadline_var, onvalue = 1, offvalue = 0, height=1, font=('Courier New', 12),
+                                               command=self.chk_cathodeloadline_click, background=self.window['bg'], width=1, anchor="w")
         self.chk_cathodeloadline.select()
-        self.chk_cathodeloadline.grid(row = 0, column = 1)
-        fm.grid(row=40, column=0, padx=0, pady=0)
+        self.chk_cathodeloadline.grid(row = 0, column = 1, columnspan=1, sticky='W')
+        # valve specs
+        self.str_specs = StringVar()
+        self.str_specs.set("Specs: ")
+        self.lbl_specs = Label(fm, textvariable=self.str_specs, font=('Courier New', 12), background=self.window['bg'])
+        self.lbl_specs.grid(row = 1, column = 0, columnspan=62, sticky='W')
+
+        #r = self.window.grid_size()[0]
+        fm.grid(row=45, column=0, padx=2, pady=40, columnspan=10, sticky='W')
 
         #BUTTONS
         self.button_quit = Button(window, text="QUIT", command=self.quit, font=('Courier New', 18))
@@ -151,6 +159,9 @@ class mclass:
         self.etr_Rk.bind("<Return>", self.parameters_changed)
         self.etr_Ymax.bind("<Return>", self.parameters_changed)
         #end of ui
+        # Read XMAX and YMAX from specs
+        #self.updateMaxXY()
+        self.valve_changed(None)
 
     def parameters_changed(self, event):
         self.change_state()
@@ -158,7 +169,18 @@ class mclass:
     def valve_changed(self, event):
         self.updateMaxXY()
         self.change_state()
+        valve = self.str_valve.get()
+        d=self.specs.loc[self.specs['valve']  == valve ]
+        self.str_specs.set("Specs: mu: %s, ra: %s ohms, VaMax: %s V, Cga: %s pF, Cg to all but anode: %s pF, Pmax: %s W" % (
+            d['mu'].iloc[0],
+            d['ra'].iloc[0],
+            d['VaMax'].iloc[0],
+            d['Cga'].iloc[0],
+            d['CgAEA'].iloc[0],
+            d['Pmax'].iloc[0]
+            ))
 
+    # upodate xmax and ymax from valve specs
     def updateMaxXY(self):
         valve = self.str_valve.get()
         d=self.specs.loc[self.specs['valve']  == valve ]
@@ -172,8 +194,8 @@ class mclass:
     def clear_chart(self):
         self.ax.clear() # clear previous plot !!!!
         self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
-        self.ax.set_ylabel('Ia, mA', fontsize=16, loc='center')
-        self.ax.set_xlabel('Va, V', fontsize=16, loc='center')
+        self.ax.set_ylabel('Ia, mA', fontsize=16, loc='center', labelpad=20)
+        self.ax.set_xlabel('Va, V', fontsize=16, loc='center',  labelpad=20)
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
@@ -220,10 +242,12 @@ class mclass:
 
     def motion_hover(self, event):
         if event.inaxes is not None:
+            self.txt_coordinates.config(state=NORMAL)
             x = format(event.xdata, '.2f')
             y = format(event.ydata, '.2f')
             self.txt_coordinates.delete('1.0', END)
             self.txt_coordinates.insert(END, "(%s V, %s mA)" % (x, y))
+            self.txt_coordinates.config(state=DISABLED)
 
     # function to plot loadline or refresh plot
     def change_state(self):
@@ -238,8 +262,10 @@ class mclass:
 
         # print(res)
 
-        ymax = int(self.str_Ymax.get())
-        xmax = int(self.str_Xmax.get())
+        ymax = int(float(self.str_Ymax.get()))
+        xmax = int(float(self.str_Xmax.get()))
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
         # select valve
         df = self.df
@@ -247,7 +273,7 @@ class mclass:
         de=df.loc[df['valve']  == valve ]
 
         # plot grid curves
-        self.ax.set_title(valve, fontsize=18)
+        self.ax.set_title(valve, fontsize=24, pad=30, weight='bold')
         self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
         #self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
         #self.ax.set_ylabel('Ia, mA', fontsize=16, loc='center')
