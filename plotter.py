@@ -236,17 +236,17 @@ class mclass:
 
         self.clear_chart()
 
-        #print(res)
+        # print(res)
 
         ymax = int(self.str_Ymax.get())
         xmax = int(self.str_Xmax.get())
 
-        #select valve
+        # select valve
         df = self.df
         valve = self.str_valve.get()
         de=df.loc[df['valve']  == valve ]
 
-        #plot grid curves
+        # plot grid curves
         self.ax.set_title(valve, fontsize=18)
         self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
         #self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
@@ -277,30 +277,36 @@ class mclass:
             ax.plot(x_positive, y_positive, linewidth=2, label=res['curve'][i].strip())
         """
 
-        #plot grid lines using existent points and interpolation
-        da=de.loc[(de['curve'] != ' Pmax'), ['valve','curve','x','y'] ]
+        # plot grid lines using existent points and interpolation
+        self.ax.set_ylim(0, ymax)
+        self.ax.set_xlim(0, xmax)
+        da=de.loc[(de['curve'] != ' Pmax') & (de['x'] <= xmax) & (de['y'] <= ymax), ['valve','curve','x','y'] ]
+
         for name, g in da.groupby('curve'):
             #print(da)
-            self.ax.set_ylim(0, ymax)
-            self.ax.set_xlim(0, xmax)
             x_positive = g['x']
             y_positive = g['y']
 
-            #interpolation
-            xnew = np.linspace(x_positive.min(), x_positive.max(), 300)
-            spl = make_interp_spline(x_positive, y_positive, k=2)  # type: BSpline
-            ynew = spl(xnew)
+            # try interpolation
+            try:
+                xnew = np.linspace(x_positive.min(), x_positive.max(), 300)
+                spl = make_interp_spline(x_positive, y_positive, k=2)  # type: BSpline
+                ynew = spl(xnew)
+            except:
+                # data points not enought ?
+                xnew = x_positive
+                ynew = y_positive
             self.ax.plot(xnew, ynew, '-', color='green', linewidth=2)
 
             # annotate grid curves
             if name == ' 0': name = "Vg = 0"
             self.ax.annotate(name + 'V', xy=(x_positive.max(), y_positive.max()), rotation=0, fontweight='bold')
 
-        # plot Pmax usando puntos
+        # plot Pmax using points
         da=de.loc[(de['curve'] == ' Pmax'), ['valve','curve','x','y'] ]
         x_positive = da['x']
         y_positive = da['y']
-        #interpolation
+        # try interpolation
         xnew = np.linspace(x_positive.min(), x_positive.max(), 300)
         spl = make_interp_spline(x_positive, y_positive, k=2)  # type: BSpline
         ynew = spl(xnew)
@@ -309,12 +315,12 @@ class mclass:
         pmax=self.specs.loc[self.specs['valve']  == valve ]['Pmax'].iloc[0]
         self.ax.plot(xnew, ynew, 'r--', linewidth=2, label=da['curve'].iloc[0].strip() + ' = %sW' % str(pmax) )
 
-        #plot loadline
+        # plot loadline
         x_values = [float(self.str_supply.get()), 0]
         y_values = [0, float(self.str_supply.get()) * 1000 / float(self.str_Ra.get())]
         self.ax.plot(x_values, y_values, '-', color='blue', linewidth=2)
 
-        #plot cathode line
+        # plot cathode line
         df = self.df
         valve = self.str_valve.get()
         de = df.loc[df['valve']  == valve ]
@@ -325,15 +331,15 @@ class mclass:
         data['x'] = (-data['b']+(data['b']**2-4*data['a']*(data['c']-data['y']))**0.5)/(2*data['a'])
         x_positive = data['x']
         y_positive = data['y']
-        #extrapolation
+        # extrapolation
         xnew = np.linspace(x_positive.min(), x_positive.max(), 300)
         spl = make_interp_spline(x_positive, y_positive, k=1)  # type: BSpline
         ynew = spl(xnew)
         if self.chk_cathodeloadline_var.get() == 1:
             self.ax.plot(xnew, ynew, '-', color='orange', linewidth=2)
-        #print(data)
+        # print(data)
 
-        #quiscient
+        # quiscient
         b = float(self.str_supply.get()) * 1000 / float(self.str_Ra.get())
         a = -b / float(self.str_supply.get())
         yloadline = xnew * a + b
@@ -344,7 +350,7 @@ class mclass:
         self.str_Iq.set(format(self.iq, ".2f"))
         self.ax.plot(self.vq, self.iq, 'ro')
 
-        #Vgk
+        # Vgk
         self.vgk = - self.iq / 1000 * float(self.str_Rk.get())
         self.str_Vgk.set(format(self.vgk, ".2f"))
 
@@ -357,7 +363,6 @@ class mclass:
             return True
         except ValueError:
             return False
-
 
 window = Tk()
 start = mclass(window)
