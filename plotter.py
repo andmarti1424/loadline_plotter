@@ -1,7 +1,6 @@
 """
 TODO
-add titles over grid curves
-add picture
+add schematic picture
 gain and freq. response calculations
 """
 import pandas as pd
@@ -278,7 +277,7 @@ class mclass:
             ax.plot(x_positive, y_positive, linewidth=2, label=res['curve'][i].strip())
         """
 
-        #usando puntos preexistentes e interpolación
+        #plot grid lines using existent points and interpolation
         da=de.loc[(de['curve'] != ' Pmax'), ['valve','curve','x','y'] ]
         for name, g in da.groupby('curve'):
             #print(da)
@@ -293,6 +292,10 @@ class mclass:
             ynew = spl(xnew)
             self.ax.plot(xnew, ynew, '-', color='green', linewidth=2)
 
+            # annotate grid curves
+            if name == ' 0': name = "Vg = 0"
+            self.ax.annotate(name + 'V', xy=(x_positive.max(), y_positive.max()), rotation=0, fontweight='bold')
+
         # plot Pmax usando puntos
         da=de.loc[(de['curve'] == ' Pmax'), ['valve','curve','x','y'] ]
         x_positive = da['x']
@@ -301,7 +304,10 @@ class mclass:
         xnew = np.linspace(x_positive.min(), x_positive.max(), 300)
         spl = make_interp_spline(x_positive, y_positive, k=2)  # type: BSpline
         ynew = spl(xnew)
-        self.ax.plot(xnew, ynew, 'r--', linewidth=2, label=da['curve'].iloc[0].strip())
+        # add Pmax legend
+        valve = self.str_valve.get()
+        pmax=self.specs.loc[self.specs['valve']  == valve ]['Pmax'].iloc[0]
+        self.ax.plot(xnew, ynew, 'r--', linewidth=2, label=da['curve'].iloc[0].strip() + ' = %sW' % str(pmax) )
 
         #plot loadline
         x_values = [float(self.str_supply.get()), 0]
@@ -342,7 +348,7 @@ class mclass:
         self.vgk = - self.iq / 1000 * float(self.str_Rk.get())
         self.str_Vgk.set(format(self.vgk, ".2f"))
 
-        self.ax.legend()
+        self.ax.legend(loc='upper left')
         self.canvas.draw()
 
     def can_convert_to_float(self, string):
