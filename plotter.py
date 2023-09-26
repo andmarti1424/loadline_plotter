@@ -370,9 +370,9 @@ class mclass:
         a = -b / float(self.str_supply.get())
         yloadline = xnew * a + b
         idx = np.argwhere(np.diff(np.sign(ynew - yloadline))).flatten()
-        self.vq = round(float(xnew[idx]), 2)
+        self.vq = xnew[idx].astype("float")[0]
         self.str_Vq.set(format(self.vq, ".2f"))
-        self.iq = round(float(yloadline[idx]), 2)
+        self.iq = yloadline[idx].astype("float")[0]
         self.str_Iq.set(format(self.iq, ".2f"))
         self.ax.plot(self.vq, self.iq, 'ro')
 
