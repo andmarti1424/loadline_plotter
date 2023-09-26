@@ -203,6 +203,8 @@ class mclass:
         self.etr_inputsignal.bind("<Return>", self.parameters_changed)
         #end of ui
 
+        self.swingl = NONE
+
         # Read XMAX and YMAX from specs
         #self.updateMaxXY()
         self.valve_changed(None)
@@ -429,8 +431,9 @@ class mclass:
         y_values = [0, float(self.str_supply.get()) * 1000 / float(self.str_Ra.get())]
         self.ax.plot(x_values, y_values, '-', color='cornflowerblue', linewidth=2)
 
-        # plot input signal swing
-        if self.chk_input_signal_swing_var.get() == 1:
+        # plot input signal suing
+        if self.swingl != NONE and self.chk_input_signal_swing_var.get() == 1:
+            self.input_swing()
             Vs = float(self.str_supply.get())
             Ra = float(self.str_Ra.get())
             b = Vs * 1000 / Ra
@@ -449,12 +452,19 @@ class mclass:
         Vs = float(self.str_supply.get())
         Ra = float(self.str_Ra.get())
 
+        lft_point_y = self.vgk+inputVpp/2
+        rht_point_y = self.vgk-inputVpp/2
+        if lft_point_y > 0:
+            self.swingl = NONE
+            self.swingr = NONE
+            return
+
         da = self.df.loc[(self.df['valve'] == valve) & (self.df['curve'] != ' Pmax'), ['valve','curve','x','y'] ]
         da[['curve', 'x', 'y']] = da[['curve', 'x', 'y']].apply(pd.to_numeric, errors='coerce', axis=1)
         b = Vs * 1000 / Ra
         a = -b / Vs
+
         # punto izq
-        lft_point_y = self.vgk+inputVpp/2
         de = da.loc[(da['curve'] < lft_point_y), ['curve'] ]
         lft_prev_curve = de['curve'].max()
         de = da.loc[(da['curve'] > lft_point_y), ['curve'] ]
@@ -463,6 +473,11 @@ class mclass:
         xmin = de['x'].min()
         de = da.loc[(da['valve'] == valve) & (da['curve'] == lft_next_curve), ['x'] ]
         xmax = de['x'].max()
+        if xmax >= float(self.str_Xmax.get()):
+            self.swingl = NONE
+            self.swingr = NONE
+            return
+
         interp_A = lft_point_y
         interp_B = np.arange(xmin, xmax, 1) #step=1
         ynew = gd((da['curve'], da['x']), da['y'], (interp_A, interp_B), method='linear')
@@ -474,7 +489,6 @@ class mclass:
         self.swingl = [lft_point_y, yloadline[idx][0]]
 
         # punto der
-        rht_point_y = self.vgk-inputVpp/2
         de = da.loc[(da['curve'] < rht_point_y), ['curve'] ]
         rht_prev_curve = de['curve'].max()
         de = da.loc[(da['curve'] > rht_point_y), ['curve'] ]
