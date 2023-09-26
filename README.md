@@ -42,7 +42,9 @@ Every dollar helps a lot! Thank you!
 <img src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" />
 
 ## Requirements
+I run this on GNU/Linux but you can run it on Windows as well.
  - `python`
  - `matplotlib`
  - `tkinter (tk)`
+ - `scipy`
 

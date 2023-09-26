@@ -1,12 +1,17 @@
 """
 TODO
+----
+gain and impedance
+2HD
 add schematic picture
-gain and freq. response calculations
+freq. response calculations
+refresh lines without refreshing whole plot
 """
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.interpolate import make_interp_spline, BSpline #interpolation
+from scipy.interpolate import griddata as gd
 from tkinter import *
 from tkinter import ttk
 from matplotlib.figure import Figure
@@ -17,8 +22,10 @@ DEFAULT_VSUPPLY = 265
 DEFAULT_Ra = 33000
 DEFAULT_Rk = 560
 DEBUG = 1
+DEFAULT_INPUTSIGNAL = 1
 DEFAULT_XMAX = 300
 DEFAULT_YMAX = 10
+DEFAULT_RL = 1000000
 
 class mclass:
     def __init__(self,  window):
@@ -37,72 +44,91 @@ class mclass:
         window.columnconfigure(3, weight=1)
         window.columnconfigure(4, weight=1)
 
-        self.lbl_valve = Label(window, text="VALVE", font=('Courier New', 12), background=self.window['bg'])
+        self.lbl_valve = Label(window, text="VALVE", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_valve.grid(row=1, column=0, sticky=W, padx=50, pady=5)
         self.str_valve = StringVar()
         self.str_valve.set(DEFAULT_VALVE)
-        self.cmb_valve = ttk.Combobox(window, values=self.df['valve'].drop_duplicates().values.tolist(), textvariable=self.str_valve, font=('Courier New', 12), width=13)
+        self.cmb_valve = ttk.Combobox(window, values=self.df['valve'].drop_duplicates().values.tolist(), textvariable=self.str_valve, font=('Courier New', 10), width=13)
         self.cmb_valve['state'] = 'readonly'
         self.cmb_valve.grid(row=1, column=1, sticky=W, padx=5, pady=5)
         self.cmb_valve.bind('<<ComboboxSelected>>', self.valve_changed)
 
-        self.lbl_supply = Label(window, text="Vsupply, V", font=('Courier New', 12), background=self.window['bg'], width=20, anchor='w')
+        self.lbl_supply = Label(window, text="Vsupply, V", font=('Courier New', 10), background=self.window['bg'], width=20, anchor='w')
         self.lbl_supply.grid(row=2, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_supply = StringVar()
         self.str_supply.set(DEFAULT_VSUPPLY)
-        self.etr_supply = Entry(window, textvariable=self.str_supply, font=('Courier New', 18), width=10)
+        self.etr_supply = Entry(window, textvariable=self.str_supply, font=('Courier New', 10), width=15)
         self.etr_supply.grid(row=2, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_Ra = Label(window, text="Ra, ohms", font=('Courier New', 12), background=self.window['bg'])
+        self.lbl_Ra = Label(window, text="Ra, ohms", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_Ra.grid(row=3, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Ra = StringVar()
         self.str_Ra.set(DEFAULT_Ra)
-        self.etr_Ra = Entry(window, textvariable=self.str_Ra, font=('Courier New', 18), width=10)
+        self.etr_Ra = Entry(window, textvariable=self.str_Ra, font=('Courier New', 10), width=15)
         self.etr_Ra.grid(row=3, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_Rk = Label(window, text="Rk, ohms", font=('Courier New', 12), background=self.window['bg'])
+        self.lbl_Rk = Label(window, text="Rk, ohms", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_Rk.grid(row=4, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Rk = StringVar()
         self.str_Rk.set(DEFAULT_Rk)
-        self.etr_Rk = Entry(window, textvariable=self.str_Rk, font=('Courier New', 18), width=10)
+        self.etr_Rk = Entry(window, textvariable=self.str_Rk, font=('Courier New', 10), width=15)
         self.etr_Rk.grid(row=4, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_Vq = Label(window, text="Vq, V", font=('Courier New', 12), background=self.window['bg'])
+        self.lbl_Vq = Label(window, text="Vq, V", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_Vq.grid(row=5, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Vq = StringVar()
-        self.lbl_Vqval = Label(window, textvariable=self.str_Vq, font=('Courier New', 18), width=10, anchor="w")
+        self.lbl_Vqval = Label(window, textvariable=self.str_Vq, font=('Courier New', 10), width=15, anchor="w")
         self.lbl_Vqval.grid(row=5, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_Iq = Label(window, text="Iq, mA", font=('Courier New', 12), background=self.window['bg'])
+        self.lbl_Iq = Label(window, text="Iq, mA", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_Iq.grid(row=6, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Iq = StringVar()
-        self.lbl_Iqval = Label(window, textvariable=self.str_Iq, font=('Courier New', 18), width=10, anchor="w")
+        self.lbl_Iqval = Label(window, textvariable=self.str_Iq, font=('Courier New', 10), width=15, anchor="w")
         self.lbl_Iqval.grid(row=6, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_Vgk = Label(window, text="Vgk, V", font=('Courier New', 12), background=self.window['bg'])
+        self.lbl_Vgk = Label(window, text="Vgk, V", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_Vgk.grid(row=7, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Vgk = StringVar()
-        self.lbl_Vgkval = Label(window, textvariable=self.str_Vgk, font=('Courier New', 18), width=10, anchor="w")
+        self.lbl_Vgkval = Label(window, textvariable=self.str_Vgk, font=('Courier New', 10), width=15, anchor="w")
         self.lbl_Vgkval.grid(row=7, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_Xmax = Label(window, text="Xmax, V", font=('Courier New', 12), background=self.window['bg'])
+        self.lbl_Xmax = Label(window, text="Xmax, V", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_Xmax.grid(row=8, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Xmax = StringVar()
         self.str_Xmax.set(DEFAULT_XMAX)
-        self.etr_Xmax = Entry(window, textvariable=self.str_Xmax, font=('Courier New', 18), width=10)
+        self.etr_Xmax = Entry(window, textvariable=self.str_Xmax, font=('Courier New', 10), width=15)
         self.etr_Xmax.grid(row=8, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_Ymax = Label(window, text="Ymax, mA", font=('Courier New', 12), background=self.window['bg'])
+        self.lbl_Ymax = Label(window, text="Ymax, mA", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_Ymax.grid(row=9, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Ymax = StringVar()
         self.str_Ymax.set(DEFAULT_YMAX)
-        self.etr_Ymax = Entry(window, textvariable=self.str_Ymax, font=('Courier New', 18), width=10)
+        self.etr_Ymax = Entry(window, textvariable=self.str_Ymax, font=('Courier New', 10), width=15)
         self.etr_Ymax.grid(row=9, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
+        self.lbl_ck = Label(window, text="Ck, pF", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_ck.grid(row=10, column=0, rowspan=1, sticky=W, padx=50, pady=5)
+        self.str_ck = StringVar()
+        self.etr_ck = Entry(window, textvariable=self.str_ck, font=('Courier New', 10), width=15)
+        self.etr_ck.grid(row=10, column=1, rowspan=1, sticky=W, padx=2, pady=5)
+
+        self.lbl_rl = Label(window, text="Rl, ohms", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_rl.grid(row=11, column=0, rowspan=1, sticky=W, padx=50, pady=5)
+        self.str_rl = StringVar()
+        self.str_rl.set(DEFAULT_RL)
+        self.etr_rl = Entry(window, textvariable=self.str_rl, font=('Courier New', 10), width=15)
+        self.etr_rl.grid(row=11, column=1, rowspan=1, sticky=W, padx=2, pady=5)
+
+        self.lbl_inputsignal = Label(window, text="input signal, Vpp", font=('Courier New', 10), background=self.window['bg'], width=23)
+        self.lbl_inputsignal.grid(row=12, column=0, rowspan=1, sticky=W, padx=50, pady=5)
+        self.str_inputsignal = StringVar()
+        self.str_inputsignal.set(DEFAULT_INPUTSIGNAL)
+        self.etr_inputsignal = Entry(window, textvariable=self.str_inputsignal, font=('Courier New', 10), width=15)
+        self.etr_inputsignal.grid(row=12, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
         # coordinates
-        self.txt_coordinates = Text(bd=0, bg=window['bg'], fg='red', height=1, wrap="none", state="normal", font=('Courier New', 12), background=self.window['bg'])
-        self.txt_coordinates.grid(row=12, column=1, columnspan=2, rowspan=1, sticky=W, padx=2, pady=5)
+        self.txt_coordinates = Text(bd=0, bg=window['bg'], fg='red', height=1, wrap="none", state="normal", font=('Courier New', 10), background=self.window['bg'])
+        self.txt_coordinates.grid(row=13, column=1, columnspan=2, rowspan=1, sticky=W, padx=2, pady=5)
         self.txt_coordinates.config(highlightthickness = 0, borderwidth=0)
         self.txt_coordinates.config(state=DISABLED)
 
@@ -120,30 +146,42 @@ class mclass:
 
         # bottom frame
         fm = Frame(window)
-        self.lbl_cathodeloadline = Label(fm, text="Cathode loadline", font=('Courier New', 12), background=self.window['bg'])
+
+        # cathode loadline
+        self.lbl_cathodeloadline = Label(fm, text="Cathode loadline", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_cathodeloadline.grid(row = 0, column = 0, pady=0, sticky='w')
         self.chk_cathodeloadline_var = IntVar()
-        self.chk_cathodeloadline = Checkbutton(fm, variable=self.chk_cathodeloadline_var, onvalue = 1, offvalue = 0, height=1, font=('Courier New', 12),
+        self.chk_cathodeloadline = Checkbutton(fm, variable=self.chk_cathodeloadline_var, onvalue = 1, offvalue = 0, height=1, font=('Courier New', 10),
                                                command=self.chk_cathodeloadline_click, background=self.window['bg'], width=1, anchor="w")
         self.chk_cathodeloadline.select()
         self.chk_cathodeloadline.grid(row = 0, column = 1, columnspan=1, sticky='W')
+
+        # input signal swing
+        self.lbl_input_signal_swing = Label(fm, text="input signal swing", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_input_signal_swing.grid(row = 1, column = 0, pady=0, sticky='w')
+        self.chk_input_signal_swing_var = IntVar()
+        self.chk_input_signal_swing = Checkbutton(fm, variable=self.chk_input_signal_swing_var, onvalue = 1, offvalue = 0, height=1, font=('Courier New', 10),
+                                               command=self.chk_input_signal_swing_click, background=self.window['bg'], width=1, anchor="w")
+        self.chk_input_signal_swing.select()
+        self.chk_input_signal_swing.grid(row = 1, column = 1, columnspan=1, sticky='W')
+
         # valve specs
         self.str_specs = StringVar()
         self.str_specs.set("Specs: ")
-        self.lbl_specs = Label(fm, textvariable=self.str_specs, font=('Courier New', 12), background=self.window['bg'])
-        self.lbl_specs.grid(row = 1, column = 0, columnspan=62, sticky='W')
+        self.lbl_specs = Label(fm, textvariable=self.str_specs, font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_specs.grid(row = 2, column = 0, columnspan=62, sticky='W')
 
         #r = self.window.grid_size()[0]
         fm.grid(row=45, column=0, padx=2, pady=40, columnspan=10, sticky='W')
 
         #BUTTONS
-        self.button_quit = Button(window, text="QUIT", command=self.quit, font=('Courier New', 18))
+        self.button_quit = Button(window, text="QUIT", command=self.quit, font=('Courier New', 10))
         self.button_quit.place(x=40, y=680)
-        self.button_start = Button(window, text="PLOT", command=self.change_state, font=('Courier New', 18))
+        self.button_start = Button(window, text="PLOT", command=self.change_state, font=('Courier New', 10))
         self.button_start.place(x=160, y=680)
-        self.button_clear = Button(window, text="CLEAR", command=self.clear_chart, font=('Courier New', 18), state='normal')
+        self.button_clear = Button(window, text="CLEAR", command=self.clear_chart, font=('Courier New', 10), state='normal')
         self.button_clear.place(x=293, y=680)
-        self.but_export = Button(window, text="EXPORT", command=self.export, font=('Courier New', 18))
+        self.but_export = Button(window, text="EXPORT", command=self.export, font=('Courier New', 10))
         self.but_export.place(x=420, y=680)
 
         # bind focus out events
@@ -152,13 +190,19 @@ class mclass:
         self.etr_supply.bind("<FocusOut>", self.parameters_changed)
         self.etr_Rk.bind("<FocusOut>", self.parameters_changed)
         self.etr_Ymax.bind("<FocusOut>", self.parameters_changed)
-
+        self.etr_rl.bind("<FocusOut>", self.parameters_changed)
+        self.etr_ck.bind("<FocusOut>", self.parameters_changed)
+        self.etr_inputsignal.bind("<FocusOut>", self.parameters_changed)
         self.etr_Xmax.bind("<Return>", self.parameters_changed)
         self.etr_Ra.bind("<Return>", self.parameters_changed)
         self.etr_supply.bind("<Return>", self.parameters_changed)
         self.etr_Rk.bind("<Return>", self.parameters_changed)
         self.etr_Ymax.bind("<Return>", self.parameters_changed)
+        self.etr_rl.bind("<Return>", self.parameters_changed)
+        self.etr_ck.bind("<Return>", self.parameters_changed)
+        self.etr_inputsignal.bind("<Return>", self.parameters_changed)
         #end of ui
+
         # Read XMAX and YMAX from specs
         #self.updateMaxXY()
         self.valve_changed(None)
@@ -203,6 +247,9 @@ class mclass:
         pass
 
     def chk_cathodeloadline_click(self):
+        self.change_state()
+
+    def chk_input_signal_swing_click(self):
         self.change_state()
 
     def quit(self):
@@ -252,15 +299,16 @@ class mclass:
     # function to plot loadline or refresh plot
     def change_state(self):
         # check values are valid
-        if  self.can_convert_to_float(self.etr_Xmax.get()) == False: return
-        if  self.can_convert_to_float(self.etr_Ra.get()) == False: return
-        if  self.can_convert_to_float(self.etr_supply.get()) == False: return
-        if  self.can_convert_to_float(self.etr_Rk.get()) == False: return
-        if  self.can_convert_to_float(self.etr_Ymax.get()) == False: return
+        if len(self.etr_Xmax.get()) != 0 and self.can_convert_to_float(self.etr_Xmax.get()) == False: return
+        if len(self.etr_Ra.get()) != 0 and self.can_convert_to_float(self.etr_Ra.get()) == False: return
+        if len(self.etr_supply.get()) != 0 and self.can_convert_to_float(self.etr_supply.get()) == False: return
+        if len(self.etr_Rk.get()) != 0 and self.can_convert_to_float(self.etr_Rk.get()) == False: return
+        if len(self.etr_Ymax.get()) != 0 and self.can_convert_to_float(self.etr_Ymax.get()) == False: return
+        if len(self.etr_rl.get()) != 0 and self.can_convert_to_float(self.etr_rl.get()) == False: return
+        if len(self.etr_ck.get()) != 0 and self.can_convert_to_float(self.etr_ck.get()) == False: return
+        if len(self.etr_inputsignal.get()) != 0 and self.can_convert_to_float(self.etr_inputsignal.get()) == False: return
 
         self.clear_chart()
-
-        # print(res)
 
         ymax = int(float(self.str_Ymax.get()))
         xmax = int(float(self.str_Xmax.get()))
@@ -272,7 +320,7 @@ class mclass:
         valve = self.str_valve.get()
         de=df.loc[df['valve']  == valve ]
 
-        # plot grid curves
+        # setup plot
         self.ax.set_title(valve, fontsize=24, pad=30, weight='bold')
         self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
         #self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
@@ -284,7 +332,6 @@ class mclass:
         num_pts = 100
         da=de[['valve','curve','a','b','c']]
         res = da.drop_duplicates()
-        #print(res)
         for i in res.index:
             lower_limit = 0    #depende de curva
             x = np.linspace(lower_limit, xmax, num_pts)
@@ -303,49 +350,6 @@ class mclass:
             ax.plot(x_positive, y_positive, linewidth=2, label=res['curve'][i].strip())
         """
 
-        # plot grid lines using existent points and interpolation
-        self.ax.set_ylim(0, ymax)
-        self.ax.set_xlim(0, xmax)
-        da=de.loc[(de['curve'] != ' Pmax') & (de['x'] <= xmax) & (de['y'] <= ymax), ['valve','curve','x','y'] ]
-
-        for name, g in da.groupby('curve'):
-            #print(da)
-            x_positive = g['x']
-            y_positive = g['y']
-
-            # try interpolation
-            try:
-                xnew = np.linspace(x_positive.min(), x_positive.max(), 300)
-                spl = make_interp_spline(x_positive, y_positive, k=2)  # type: BSpline
-                ynew = spl(xnew)
-            except:
-                # data points not enought ?
-                xnew = x_positive
-                ynew = y_positive
-            self.ax.plot(xnew, ynew, '-', color='green', linewidth=2)
-
-            # annotate grid curves
-            if name == ' 0': name = "Vg = 0"
-            self.ax.annotate(name + 'V', xy=(x_positive.max(), y_positive.max()), rotation=0, fontweight='bold')
-
-        # plot Pmax using points
-        da=de.loc[(de['curve'] == ' Pmax'), ['valve','curve','x','y'] ]
-        x_positive = da['x']
-        y_positive = da['y']
-        # try interpolation
-        xnew = np.linspace(x_positive.min(), x_positive.max(), 300)
-        spl = make_interp_spline(x_positive, y_positive, k=2)  # type: BSpline
-        ynew = spl(xnew)
-        # add Pmax legend
-        valve = self.str_valve.get()
-        pmax=self.specs.loc[self.specs['valve']  == valve ]['Pmax'].iloc[0]
-        self.ax.plot(xnew, ynew, 'r--', linewidth=2, label=da['curve'].iloc[0].strip() + ' = %sW' % str(pmax) )
-
-        # plot loadline
-        x_values = [float(self.str_supply.get()), 0]
-        y_values = [0, float(self.str_supply.get()) * 1000 / float(self.str_Ra.get())]
-        self.ax.plot(x_values, y_values, '-', color='blue', linewidth=2)
-
         # plot cathode line
         df = self.df
         valve = self.str_valve.get()
@@ -362,8 +366,7 @@ class mclass:
         spl = make_interp_spline(x_positive, y_positive, k=1)  # type: BSpline
         ynew = spl(xnew)
         if self.chk_cathodeloadline_var.get() == 1:
-            self.ax.plot(xnew, ynew, '-', color='orange', linewidth=2)
-        # print(data)
+            self.ax.plot(xnew, ynew, '-', color='green', linewidth=1)
 
         # quiscient
         b = float(self.str_supply.get()) * 1000 / float(self.str_Ra.get())
@@ -374,14 +377,121 @@ class mclass:
         self.str_Vq.set(format(self.vq, ".2f"))
         self.iq = yloadline[idx].astype("float")[0]
         self.str_Iq.set(format(self.iq, ".2f"))
-        self.ax.plot(self.vq, self.iq, 'ro')
 
         # Vgk
         self.vgk = - self.iq / 1000 * float(self.str_Rk.get())
         self.str_Vgk.set(format(self.vgk, ".2f"))
 
+        # get input signal swing values
+        if self.chk_input_signal_swing_var.get() == 1:
+            self.input_swing()
+
+        # plot grid lines using existent points and interpolation
+        self.ax.set_ylim(0, ymax)
+        self.ax.set_xlim(0, xmax)
+        valve = self.str_valve.get()
+        da = df.loc[df['valve']  == valve ]
+        da=da.loc[(da['curve'] != ' Pmax') & (da['x'] <= xmax) & (da['y'] <= ymax), ['valve','curve','x','y'] ]
+        for name, g in da.groupby('curve'):
+            x_positive = g['x']
+            y_positive = g['y']
+
+            # try interpolation
+            try:
+                xnew = np.linspace(x_positive.min(), x_positive.max(), 300)
+                spl = make_interp_spline(x_positive, y_positive, k=2)  # type: BSpline
+                ynew = spl(xnew)
+            except:
+                # data points not enought ?
+                xnew = x_positive
+                ynew = y_positive
+            self.ax.plot(xnew, ynew, '-', color='black', linewidth=1)
+
+            # annotate grid curves
+            if name == ' 0': name = "Vg = 0"
+            self.ax.annotate(name + 'V', xy=(x_positive.max(), y_positive.max()), rotation=0, fontweight='bold')
+
+        # plot Pmax using points
+        da=df.loc[(df['curve'] == ' Pmax') & (df['valve']  == valve), ['valve','curve','x','y'] ]
+        x_positive = da['x']
+        y_positive = da['y']
+        # try interpolation
+        xnew = np.linspace(x_positive.min(), x_positive.max(), 300)
+        spl = make_interp_spline(x_positive, y_positive, k=2)  # type: BSpline
+        ynew = spl(xnew)
+        # add Pmax legend
+        valve = self.str_valve.get()
+        pmax=self.specs.loc[self.specs['valve']  == valve ]['Pmax'].iloc[0]
+        self.ax.plot(xnew, ynew, 'r--', linewidth=1, label=da['curve'].iloc[0].strip() + ' = %sW' % str(pmax) )
+
+        # plot loadline
+        x_values = [float(self.str_supply.get()), 0]
+        y_values = [0, float(self.str_supply.get()) * 1000 / float(self.str_Ra.get())]
+        self.ax.plot(x_values, y_values, '-', color='cornflowerblue', linewidth=2)
+
+        # plot input signal swing
+        if self.chk_input_signal_swing_var.get() == 1:
+            Vs = float(self.str_supply.get())
+            Ra = float(self.str_Ra.get())
+            b = Vs * 1000 / Ra
+            a = -b / Vs
+            self.ax.plot([ (self.swingl[1] - b)/a, (self.swingr[1] - b)/a ], [ self.swingl[1], self.swingr[1] ], '-', color='orange', linewidth=2.5)
+
+        # plot quiscient at the end
+        self.ax.plot(self.vq, self.iq, 'ro', markersize=6)
+
         self.ax.legend(loc='upper left')
         self.canvas.draw()
+
+    def input_swing(self):
+        valve = self.str_valve.get()
+        inputVpp = float(self.str_inputsignal.get())
+        Vs = float(self.str_supply.get())
+        Ra = float(self.str_Ra.get())
+
+        da = self.df.loc[(self.df['valve'] == valve) & (self.df['curve'] != ' Pmax'), ['valve','curve','x','y'] ]
+        da[['curve', 'x', 'y']] = da[['curve', 'x', 'y']].apply(pd.to_numeric, errors='coerce', axis=1)
+        b = Vs * 1000 / Ra
+        a = -b / Vs
+        # punto izq
+        lft_point_y = self.vgk+inputVpp/2
+        de = da.loc[(da['curve'] < lft_point_y), ['curve'] ]
+        lft_prev_curve = de['curve'].max()
+        de = da.loc[(da['curve'] > lft_point_y), ['curve'] ]
+        lft_next_curve = de['curve'].min()
+        de = da.loc[(da['valve'] == valve) & (da['curve'] == lft_prev_curve), ['x'] ]
+        xmin = de['x'].min()
+        de = da.loc[(da['valve'] == valve) & (da['curve'] == lft_next_curve), ['x'] ]
+        xmax = de['x'].max()
+        interp_A = lft_point_y
+        interp_B = np.arange(xmin, xmax, 1) #step=1
+        ynew = gd((da['curve'], da['x']), da['y'], (interp_A, interp_B), method='linear')
+        yloadline = interp_B * a + b
+        idx = np.argwhere(np.diff(np.sign(ynew - yloadline))).flatten()
+        #el punto izq es:
+        #print(lft_point_y)
+        #print(yloadline[idx][0])
+        self.swingl = [lft_point_y, yloadline[idx][0]]
+
+        # punto der
+        rht_point_y = self.vgk-inputVpp/2
+        de = da.loc[(da['curve'] < rht_point_y), ['curve'] ]
+        rht_prev_curve = de['curve'].max()
+        de = da.loc[(da['curve'] > rht_point_y), ['curve'] ]
+        rht_next_curve = de['curve'].min()
+        de = da.loc[(da['valve'] == valve) & (da['curve'] == rht_prev_curve), ['x'] ]
+        xmin = de['x'].min()
+        de = da.loc[(da['valve'] == valve) & (da['curve'] == rht_next_curve), ['x'] ]
+        xmax = de['x'].max()
+        interp_A = rht_point_y
+        interp_B = np.arange(xmin, xmax, 1) #step=1
+        ynew = gd((da['curve'], da['x']), da['y'], (interp_A, interp_B), method='linear')
+        yloadline = interp_B * a + b
+        idx = np.argwhere(np.diff(np.sign(ynew - yloadline))).flatten()
+        #el punto der es:
+        #print(rht_point_y)
+        #print(yloadline[idx][0])
+        self.swingr = [rht_point_y, yloadline[idx][0]]
 
     def can_convert_to_float(self, string):
         try:
