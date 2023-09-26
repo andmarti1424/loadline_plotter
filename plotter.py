@@ -6,6 +6,7 @@ gain and impedance
 add schematic picture
 freq. response calculations
 refresh lines without refreshing whole plot
+get better data for ECC85
 """
 import pandas as pd
 import numpy as np
@@ -17,12 +18,12 @@ from tkinter import ttk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
+DEBUG = 0
 DEFAULT_VALVE = 'E88CC'
 DEFAULT_VSUPPLY = 265
 DEFAULT_Ra = 33000
 DEFAULT_Rk = 560
-DEBUG = 1
-DEFAULT_INPUTSIGNAL = 1
+DEFAULT_INPUTSIGNAL = 2000
 DEFAULT_XMAX = 300
 DEFAULT_YMAX = 10
 DEFAULT_RL = 1000000
@@ -119,18 +120,13 @@ class mclass:
         self.etr_rl = Entry(window, textvariable=self.str_rl, font=('Courier New', 10), width=15)
         self.etr_rl.grid(row=11, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_inputsignal = Label(window, text="input signal, Vpp", font=('Courier New', 10), background=self.window['bg'], width=23)
+        self.lbl_inputsignal = Label(window, text="input signal, mVpp", font=('Courier New', 10), background=self.window['bg'], width=18)
         self.lbl_inputsignal.grid(row=12, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_inputsignal = StringVar()
         self.str_inputsignal.set(DEFAULT_INPUTSIGNAL)
         self.etr_inputsignal = Entry(window, textvariable=self.str_inputsignal, font=('Courier New', 10), width=15)
         self.etr_inputsignal.grid(row=12, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        # coordinates
-        self.txt_coordinates = Text(bd=0, bg=window['bg'], fg='red', height=1, wrap="none", state="normal", font=('Courier New', 10), background=self.window['bg'])
-        self.txt_coordinates.grid(row=13, column=1, columnspan=2, rowspan=1, sticky=W, padx=2, pady=5)
-        self.txt_coordinates.config(highlightthickness = 0, borderwidth=0)
-        self.txt_coordinates.config(state=DISABLED)
 
         # title
         self.title = Label(window, text='andmarti Loadline Plotter', fg='#1C5AAC', font=('Courier New', 24, 'bold'))
@@ -171,7 +167,18 @@ class mclass:
         self.lbl_specs = Label(fm, textvariable=self.str_specs, font=('Courier New', 10), background=self.window['bg'])
         self.lbl_specs.grid(row = 2, column = 0, columnspan=62, sticky='W')
 
-        #r = self.window.grid_size()[0]
+        # coordinates
+        #self.txt_coordinates = Text(bd=0, bg=window['bg'], fg='red', height=1, wrap="none", state="normal", font=('Courier New', 10), background=self.window['bg'])
+        #self.txt_coordinates.grid(row=13, column=1, columnspan=2, rowspan=1, sticky=W, padx=2, pady=5)
+        #self.txt_coordinates.config(highlightthickness = 0, borderwidth=0)
+        #self.txt_coordinates.config(state=DISABLED)
+
+        self.txt_coordinates = Text(fm, bd=0, bg=window['bg'], fg='red', height=1, wrap="none", state="normal", font=('Courier New', 10), background=self.window['bg'])
+        #self.txt_coordinates.grid(row=13, column=1, columnspan=2, rowspan=1, sticky=W, padx=2, pady=5)
+        self.txt_coordinates.grid(row = 3, column = 0, columnspan=10, sticky='W')
+        self.txt_coordinates.config(highlightthickness = 0, borderwidth=0)
+        self.txt_coordinates.config(state=DISABLED)
+
         fm.grid(row=45, column=0, padx=2, pady=40, columnspan=10, sticky='W')
 
         #BUTTONS
@@ -429,7 +436,7 @@ class mclass:
         # plot loadline
         x_values = [float(self.str_supply.get()), 0]
         y_values = [0, float(self.str_supply.get()) * 1000 / float(self.str_Ra.get())]
-        self.ax.plot(x_values, y_values, '-', color='cornflowerblue', linewidth=2)
+        self.ax.plot(x_values, y_values, '-', color='blue', linewidth=2)
 
         # plot input signal suing
         if self.swingl != NONE and self.chk_input_signal_swing_var.get() == 1:
@@ -438,7 +445,7 @@ class mclass:
             Ra = float(self.str_Ra.get())
             b = Vs * 1000 / Ra
             a = -b / Vs
-            self.ax.plot([ (self.swingl[1] - b)/a, (self.swingr[1] - b)/a ], [ self.swingl[1], self.swingr[1] ], '-', color='orange', linewidth=2.5)
+            self.ax.plot([ (self.swingl[1] - b)/a, (self.swingr[1] - b)/a ], [ self.swingl[1], self.swingr[1] ], '-', color='orange', linewidth=2.7)
 
         # plot quiscient at the end
         self.ax.plot(self.vq, self.iq, 'ro', markersize=6)
@@ -446,66 +453,70 @@ class mclass:
         self.ax.legend(loc='upper left')
         self.canvas.draw()
 
+    # TODO
+    # this does not that well with ECC85 cause the interpolation does not like the data I entered
+    # get better data for ECC85
     def input_swing(self):
+        self.swingl = NONE
+        self.swingr = NONE
         valve = self.str_valve.get()
         inputVpp = float(self.str_inputsignal.get())
         Vs = float(self.str_supply.get())
         Ra = float(self.str_Ra.get())
+        lft_point_y = self.vgk+inputVpp/2000
+        rht_point_y = self.vgk-inputVpp/2000
 
-        lft_point_y = self.vgk+inputVpp/2
-        rht_point_y = self.vgk-inputVpp/2
-        if lft_point_y > 0:
-            self.swingl = NONE
-            self.swingr = NONE
-            return
+        if lft_point_y > 0: return
 
         da = self.df.loc[(self.df['valve'] == valve) & (self.df['curve'] != ' Pmax'), ['valve','curve','x','y'] ]
         da[['curve', 'x', 'y']] = da[['curve', 'x', 'y']].apply(pd.to_numeric, errors='coerce', axis=1)
         b = Vs * 1000 / Ra
         a = -b / Vs
 
-        # punto izq
+        # left point of swing
         de = da.loc[(da['curve'] < lft_point_y), ['curve'] ]
         lft_prev_curve = de['curve'].max()
         de = da.loc[(da['curve'] > lft_point_y), ['curve'] ]
         lft_next_curve = de['curve'].min()
+
         de = da.loc[(da['valve'] == valve) & (da['curve'] == lft_prev_curve), ['x'] ]
         xmin = de['x'].min()
-        de = da.loc[(da['valve'] == valve) & (da['curve'] == lft_next_curve), ['x'] ]
-        xmax = de['x'].max()
-        if xmax >= float(self.str_Xmax.get()):
-            self.swingl = NONE
-            self.swingr = NONE
-            return
 
-        interp_A = lft_point_y
-        interp_B = np.arange(xmin, xmax, 1) #step=1
-        ynew = gd((da['curve'], da['x']), da['y'], (interp_A, interp_B), method='linear')
-        yloadline = interp_B * a + b
-        idx = np.argwhere(np.diff(np.sign(ynew - yloadline))).flatten()
-        #el punto izq es:
-        #print(lft_point_y)
-        #print(yloadline[idx][0])
-        self.swingl = [lft_point_y, yloadline[idx][0]]
-
-        # punto der
         de = da.loc[(da['curve'] < rht_point_y), ['curve'] ]
         rht_prev_curve = de['curve'].max()
         de = da.loc[(da['curve'] > rht_point_y), ['curve'] ]
         rht_next_curve = de['curve'].min()
-        de = da.loc[(da['valve'] == valve) & (da['curve'] == rht_prev_curve), ['x'] ]
-        xmin = de['x'].min()
         de = da.loc[(da['valve'] == valve) & (da['curve'] == rht_next_curve), ['x'] ]
         xmax = de['x'].max()
+
+        if xmax >= float(self.str_Xmax.get()): return
+        if DEBUG: print('swing - min: %, max: %' , xmin, xmax)
+
+        interp_A = lft_point_y
+        interp_B = np.arange(xmin, xmax, 1) #step=1
+        ynew = gd((da['curve'], da['x']), da['y'], (interp_A, interp_B), method='cubic')
+        yloadline = interp_B * a + b
+
+        idx = np.argwhere(np.diff(np.sign(yloadline - ynew))).flatten()
+
+        # left point of swing
+        if DEBUG:
+            print('left swing: Vg=%s Ia=%s Va=%s' % (lft_point_y, ynew, interp_B))
+            self.ax.plot(interp_B, ynew, '-', color='green', linewidth=1)
+        self.swingl = [lft_point_y, yloadline[idx][0]]
+
         interp_A = rht_point_y
         interp_B = np.arange(xmin, xmax, 1) #step=1
-        ynew = gd((da['curve'], da['x']), da['y'], (interp_A, interp_B), method='linear')
-        yloadline = interp_B * a + b
+        ynew = gd((da['curve'], da['x']), da['y'], (interp_A, interp_B), method='cubic')
+
         idx = np.argwhere(np.diff(np.sign(ynew - yloadline))).flatten()
-        #el punto der es:
-        #print(rht_point_y)
-        #print(yloadline[idx][0])
-        self.swingr = [rht_point_y, yloadline[idx][0]]
+
+        # right point of swing
+        if DEBUG:
+            print('right swing: Vg=%s Ia=%s Va=%s' % (rht_point_y, ynew, interp_B))
+            self.ax.plot(interp_B, ynew, '-', color='green', linewidth=1)
+        self.swingr = [rht_point_y, yloadline[idx][-1]]
+
 
     def can_convert_to_float(self, string):
         try:
