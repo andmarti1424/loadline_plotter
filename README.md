@@ -1,7 +1,7 @@
 # loadline_plotter
 ## andmarti1424 Vacuum valves loadline plotter
 
-<img src="screenshots/e88cc.png">
+<img src="images/e88cc.png">
 
 This is a loadline plotter based on ideas taken from Merlin's Blencowe and VTADIY ones.
 This is totally free for you to use it. License is GPLv3.

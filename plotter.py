@@ -489,7 +489,7 @@ class mclass:
         de = da.loc[(da['valve'] == valve) & (da['curve'] == rht_next_curve), ['x'] ]
         xmax = de['x'].max()
 
-        if xmax >= float(self.str_Xmax.get()): return
+        if lft_point_y >= float(self.str_Xmax.get()): return
         if DEBUG: print('swing - min: %, max: %' , xmin, xmax)
 
         interp_A = lft_point_y
@@ -524,6 +524,22 @@ class mclass:
             return True
         except ValueError:
             return False
+
+"""
+#sin cap
+g=(mu*(1/((1/Ra)+(1/Rl))))/((1/((1/Ra)+(1/Rl)))+ra+(Rk*(mu+1)))
+gdb=(LOG10(g))*20
+anode output impedance =(Ra*(ra+(Rk*(mu+1))))/(Ra+ra+(Rk*(mu+1)))
+cathode output impedance = 1/((1/((Ra+ra)/(mu+1)))+(1/Rk))
+total input capacitance = Cgaea +((Cf+Cga)*g)
+#####################################
+#con cap
+gcc=(mu*(1/((1/Ra)+(1/Rl))))/((1/((1/Ra)+(1/Rl)))+ra)
+gdb=(LOG10(gcc))*20
+anode output impedance = (Ra*ra)/(Ra+ra)
+total input capacitance = Cgaea +((Cf+Cga)*gcc)
+#####################################
+"""
 
 window = Tk()
 start = mclass(window)
