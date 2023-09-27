@@ -6,7 +6,6 @@ gain and impedance
 add schematic picture
 freq. response calculations
 refresh lines without refreshing whole plot
-get better data for ECC85
 """
 import pandas as pd
 import numpy as np
