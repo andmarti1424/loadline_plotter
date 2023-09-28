@@ -2,7 +2,6 @@
 TODO
 ----
 add schematic picture
-2HD
 add capacitance
 freq. response calculations
 refresh lines without refreshing whole plot
@@ -18,7 +17,7 @@ from tkinter import ttk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-DEBUG = 0
+DEBUG = 1
 DEFAULT_VALVE = 'E88CC'
 DEFAULT_VSUPPLY = 265
 DEFAULT_Ra = 33000
@@ -152,7 +151,7 @@ class mclass:
         self.chk_cathodeloadline.select()
         self.chk_cathodeloadline.grid(row = 0, column = 1, columnspan=1, sticky='W')
 
-        # input signal swing
+        # input signal  swing
         self.lbl_input_signal_swing = Label(fm, text="input signal swing", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_input_signal_swing.grid(row = 1, column = 0, pady=0, sticky='w')
         self.chk_input_signal_swing_var = IntVar()
@@ -172,7 +171,7 @@ class mclass:
         self.str_calculations.set("Calculations: ")
         self.lbl_calculations = Label(fm, textvariable=self.str_calculations, font=('Courier New', 10),  fg='green', background=self.window['bg'])
         self.lbl_calculations.grid(row = 3, column = 0, columnspan=62, sticky='W')
-        
+
         # cursor position
         self.txt_coordinates = Text(fm, bd=0, bg=window['bg'], fg='red', height=1, wrap="none", state="normal", font=('Courier New', 10), background=self.window['bg'])
         #self.txt_coordinates.grid(row=13, column=1, columnspan=2, rowspan=1, sticky=W, padx=2, pady=5)
@@ -211,7 +210,9 @@ class mclass:
         self.etr_inputsignal.bind("<Return>", self.parameters_changed)
         #end of ui
 
+        self.sechd = NONE
         self.swingl = NONE
+        self.swingr = NONE
 
         # Read XMAX and YMAX from specs
         #self.updateMaxXY()
@@ -314,7 +315,7 @@ class mclass:
         if len(self.etr_Rk.get()) == 0: return
         if len(self.etr_Xmax.get()) == 0: return
         if len(self.etr_Ymax.get()) == 0: return
-        
+
         if len(self.etr_Xmax.get()) != 0 and self.can_convert_to_float(self.etr_Xmax.get()) == False: return
         if len(self.etr_Ra.get()) != 0 and self.can_convert_to_float(self.etr_Ra.get()) == False: return
         if len(self.etr_supply.get()) != 0 and self.can_convert_to_float(self.etr_supply.get()) == False: return
@@ -459,13 +460,15 @@ class mclass:
 
         self.ax.legend(loc='upper left')
         self.canvas.draw()
-        
+
         # calculate_gain_impedance
         self.calculate_gain_impedance()
 
-    # TODO
-    # this does not that well with ECC85 cause the interpolation does not like the data I entered
-    # get better data for ECC85
+        # calculate and show 2HD
+        self.calculate_2hd()
+        if self.sechd != NONE:
+            self.str_calculations.set(self.str_calculations.get() + ', 2HD: %.2f %%' % self.sechd)
+
     def input_swing(self):
         self.swingl = NONE
         self.swingr = NONE
@@ -500,7 +503,7 @@ class mclass:
         xmax = de['x'].max()
 
         if lft_point_y >= float(self.str_Xmax.get()): return
-        if DEBUG: print('swing - min: %, max: %' , xmin, xmax)
+        #if DEBUG: print('swing - min: %, max: %' , xmin, xmax)
 
         interp_A = lft_point_y
         interp_B = np.arange(xmin, xmax, 1) #step=1
@@ -510,10 +513,13 @@ class mclass:
         idx = np.argwhere(np.diff(np.sign(yloadline - ynew))).flatten()
 
         # left point of swing
-        if DEBUG:
-            print('left swing: Vg=%s Ia=%s Va=%s' % (lft_point_y, ynew, interp_B))
-            self.ax.plot(interp_B, ynew, '-', color='green', linewidth=1)
-        self.swingl = [lft_point_y, yloadline[idx][0]]
+        #if DEBUG:
+        #    print('left swing: Vg=%s Ia=%s Va=%s' % (lft_point_y, ynew, interp_B))
+        #    self.ax.plot(interp_B, ynew, '-', color='green', linewidth=1)
+        self.swingl = [lft_point_y, yloadline[idx][0], (yloadline[idx][0]-b)/a   ]
+        #print(lft_point_y)
+        #print(yloadline[idx][0])
+        #print((yloadline[idx][0]-b)/a)
 
         interp_A = rht_point_y
         interp_B = np.arange(xmin, xmax, 1) #step=1
@@ -522,10 +528,13 @@ class mclass:
         idx = np.argwhere(np.diff(np.sign(ynew - yloadline))).flatten()
 
         # right point of swing
-        if DEBUG:
-            print('right swing: Vg=%s Ia=%s Va=%s' % (rht_point_y, ynew, interp_B))
-            self.ax.plot(interp_B, ynew, '-', color='green', linewidth=1)
-        self.swingr = [rht_point_y, yloadline[idx][-1]]
+        #if DEBUG:
+        #    print('right swing: Vg=%s Ia=%s Va=%s' % (rht_point_y, ynew, interp_B))
+        #    self.ax.plot(interp_B, ynew, '-', color='green', linewidth=1)
+        self.swingr = [rht_point_y, yloadline[idx][-1], (yloadline[idx][-1]-b)/a  ]
+        #print(rht_point_y)
+        #print(yloadline[idx][-1])
+        #print((yloadline[idx][-1]-b)/a)
 
 
     def can_convert_to_float(self, string):
@@ -534,6 +543,19 @@ class mclass:
             return True
         except ValueError:
             return False
+
+    def calculate_2hd(self):
+        self.sechd = NONE
+        if len(self.str_Vq.get()) == 0: return
+        if self.swingl != NONE or self.swingr != NONE:
+            A = self.swingl[2]
+            B = float(self.str_Vq.get())
+            C = self.swingr[2]
+            AB = B - A
+            #print('AB: %f' % AB)
+            BC = C - B
+            #print('BC: %f' % BC)
+            self.sechd = abs((AB - BC) / (2 * (AB+BC)) * 100)
 
     def calculate_gain_impedance(self):
         valve = self.str_valve.get()
@@ -569,6 +591,7 @@ class mclass:
             #ck = float(self.str_ck.get())
             #cf = float(self.str_cf.get())
             #total input capacitance = Cgaea +((Cf+Cga)*gcc)
+
 
         """
         #sin cap
