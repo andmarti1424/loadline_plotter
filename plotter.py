@@ -588,6 +588,6 @@ class mclass:
 
 window = Tk()
 window.title('andmarti Load Line Plotter')
-window.state('zoomed')
+#window.state('zoomed')
 start = mclass(window)
 window.mainloop()
