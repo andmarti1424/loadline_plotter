@@ -554,7 +554,7 @@ class mclass:
             gdb=(math.log10(g))*20
             aoi =(Ra*(ra+(Rk*(mu+1))))/(Ra+ra+(Rk*(mu+1)))
             coi = 1/((1/((Ra+ra)/(mu+1)))+(1/Rk))
-            self.str_calculations.set('g: %.1f, gdb: %.1f, anode output impedance: %d ohms, cathode output impedance: %d ohms' % (g, gdb, aoi, coi))
+            self.str_calculations.set('gain: %.1f %.1f dB, anode output impedance: %d ohms, cathode output impedance: %d ohms' % (g, gdb, aoi, coi))
             #Cga = self.specs.loc[self.specs['valve']  == valve ]['Cga'].iloc[0]
             #CgAEA = self.specs.loc[self.specs['valve']  == valve ]['CgAEA'].iloc[0]
             #cf = float(self.str_cf.get())
@@ -563,7 +563,7 @@ class mclass:
             gcc=(mu*(1/((1/Ra)+(1/Rl))))/((1/((1/Ra)+(1/Rl)))+ra)
             gdb=(math.log10(gcc))*20
             aoi = (Ra*ra)/(Ra+ra)
-            self.str_calculations.set('g: %.1f, gdb: %.1f, anode output impedance: %d ohms' % (gcc, gdb, aoi))
+            self.str_calculations.set('gain: %.1f %.1f dB, anode output impedance: %d ohms' % (gcc, gdb, aoi))
             #Cga = self.specs.loc[self.specs['valve']  == valve ]['Cga'].iloc[0]
             #CgAEA = self.specs.loc[self.specs['valve']  == valve ]['CgAEA'].iloc[0]
             #ck = float(self.str_ck.get())
