@@ -8,7 +8,7 @@ This is a loadline plotter based on ideas taken from Merlin's Blencowe and VTADI
 This is totally free for you to use it. License is GPLv3.
 
 ## Usage
-```python plotter.py```
+```python allplotter.py```
 
 ## Adding valves
 Its easy to add new valves info. All you need is to specify curves data in the following format and add it to valves_data.csv:
