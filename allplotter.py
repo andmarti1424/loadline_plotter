@@ -17,7 +17,7 @@ from tkinter import ttk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-DEBUG = 1
+DEBUG = 0
 DEFAULT_VALVE = 'E88CC'
 DEFAULT_VSUPPLY = 265
 DEFAULT_Ra = 33000
