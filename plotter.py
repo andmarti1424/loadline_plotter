@@ -1,14 +1,15 @@
 """
 TODO
 ----
-gain and impedance
-2HD
 add schematic picture
+2HD
+add capacitance
 freq. response calculations
 refresh lines without refreshing whole plot
 """
 import pandas as pd
 import numpy as np
+import math
 from matplotlib import pyplot as plt
 from scipy.interpolate import make_interp_spline, BSpline #interpolation
 from scipy.interpolate import griddata as gd
@@ -128,12 +129,12 @@ class mclass:
 
 
         # title
-        self.title = Label(window, text='andmarti Loadline Plotter', fg='#1C5AAC', font=('Courier New', 24, 'bold'))
+        self.title = Label(window, text='andmarti Load Line Plotter', fg='#1C5AAC', font=('Courier New', 24, 'bold'))
         self.title.grid(row=0, column=0, columnspan=5, padx=10, sticky=N)
 
         # plot
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.window)
-        self.canvas.get_tk_widget().grid(row=1, column=4, rowspan=42, columnspan=3, sticky=W, padx=0, pady=40)
+        self.canvas.get_tk_widget().grid(row=1, column=4, rowspan=44, columnspan=3, sticky=W, padx=0, pady=0)
         self.canvas.mpl_connect('motion_notify_event', self.motion_hover)
         self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
         self.ax.set_ylabel('Ia, mA', fontsize=16, loc='center', labelpad=20)
@@ -166,19 +167,20 @@ class mclass:
         self.lbl_specs = Label(fm, textvariable=self.str_specs, font=('Courier New', 10), background=self.window['bg'])
         self.lbl_specs.grid(row = 2, column = 0, columnspan=62, sticky='W')
 
-        # coordinates
-        #self.txt_coordinates = Text(bd=0, bg=window['bg'], fg='red', height=1, wrap="none", state="normal", font=('Courier New', 10), background=self.window['bg'])
-        #self.txt_coordinates.grid(row=13, column=1, columnspan=2, rowspan=1, sticky=W, padx=2, pady=5)
-        #self.txt_coordinates.config(highlightthickness = 0, borderwidth=0)
-        #self.txt_coordinates.config(state=DISABLED)
-
+        # calculations
+        self.str_calculations = StringVar()
+        self.str_calculations.set("Calculations: ")
+        self.lbl_calculations = Label(fm, textvariable=self.str_calculations, font=('Courier New', 10),  fg='green', background=self.window['bg'])
+        self.lbl_calculations.grid(row = 3, column = 0, columnspan=62, sticky='W')
+        
+        # cursor position
         self.txt_coordinates = Text(fm, bd=0, bg=window['bg'], fg='red', height=1, wrap="none", state="normal", font=('Courier New', 10), background=self.window['bg'])
         #self.txt_coordinates.grid(row=13, column=1, columnspan=2, rowspan=1, sticky=W, padx=2, pady=5)
-        self.txt_coordinates.grid(row = 3, column = 0, columnspan=10, sticky='W')
+        self.txt_coordinates.grid(row = 4, column = 0, columnspan=10, sticky='W')
         self.txt_coordinates.config(highlightthickness = 0, borderwidth=0)
         self.txt_coordinates.config(state=DISABLED)
 
-        fm.grid(row=45, column=0, padx=2, pady=40, columnspan=10, sticky='W')
+        fm.grid(row=45, column=0, padx=2, pady=0, columnspan=10, sticky='W')
 
         #BUTTONS
         self.button_quit = Button(window, text="QUIT", command=self.quit, font=('Courier New', 10))
@@ -307,6 +309,12 @@ class mclass:
     # function to plot loadline or refresh plot
     def change_state(self):
         # check values are valid
+        if len(self.etr_Ra.get()) == 0: return
+        if len(self.etr_supply.get()) == 0: return
+        if len(self.etr_Rk.get()) == 0: return
+        if len(self.etr_Xmax.get()) == 0: return
+        if len(self.etr_Ymax.get()) == 0: return
+        
         if len(self.etr_Xmax.get()) != 0 and self.can_convert_to_float(self.etr_Xmax.get()) == False: return
         if len(self.etr_Ra.get()) != 0 and self.can_convert_to_float(self.etr_Ra.get()) == False: return
         if len(self.etr_supply.get()) != 0 and self.can_convert_to_float(self.etr_supply.get()) == False: return
@@ -451,6 +459,9 @@ class mclass:
 
         self.ax.legend(loc='upper left')
         self.canvas.draw()
+        
+        # calculate_gain_impedance
+        self.calculate_gain_impedance()
 
     # TODO
     # this does not that well with ECC85 cause the interpolation does not like the data I entered
@@ -524,22 +535,59 @@ class mclass:
         except ValueError:
             return False
 
-"""
-#sin cap
-g=(mu*(1/((1/Ra)+(1/Rl))))/((1/((1/Ra)+(1/Rl)))+ra+(Rk*(mu+1)))
-gdb=(LOG10(g))*20
-anode output impedance =(Ra*(ra+(Rk*(mu+1))))/(Ra+ra+(Rk*(mu+1)))
-cathode output impedance = 1/((1/((Ra+ra)/(mu+1)))+(1/Rk))
-total input capacitance = Cgaea +((Cf+Cga)*g)
-#####################################
-#con cap
-gcc=(mu*(1/((1/Ra)+(1/Rl))))/((1/((1/Ra)+(1/Rl)))+ra)
-gdb=(LOG10(gcc))*20
-anode output impedance = (Ra*ra)/(Ra+ra)
-total input capacitance = Cgaea +((Cf+Cga)*gcc)
-#####################################
-"""
+    def calculate_gain_impedance(self):
+        valve = self.str_valve.get()
+        mu = self.specs.loc[self.specs['valve']  == valve ]['mu'].iloc[0]
+        ra = self.specs.loc[self.specs['valve']  == valve ]['ra'].iloc[0]
+        if len(self.etr_Ra.get()) == 0: return
+        Ra = float(self.etr_Ra.get())
+        if len(self.etr_rl.get()) == 0: return
+        if len(self.etr_rl.get()) != 0 and self.can_convert_to_float(self.etr_rl.get()) == False: return
+        Rl = float(self.etr_rl.get())
+
+        #sin cap
+        if len(self.etr_ck.get()) == 0:
+            if len(self.etr_Rk.get()) == 0: return
+            if len(self.etr_Rk.get()) != 0 and self.can_convert_to_float(self.etr_Rk.get()) == False: return
+            Rk = float(self.etr_Rk.get())
+            g=(mu*(1/((1/Ra)+(1/Rl))))/((1/((1/Ra)+(1/Rl)))+ra+(Rk*(mu+1)))
+            gdb=(math.log10(g))*20
+            aoi =(Ra*(ra+(Rk*(mu+1))))/(Ra+ra+(Rk*(mu+1)))
+            coi = 1/((1/((Ra+ra)/(mu+1)))+(1/Rk))
+            self.str_calculations.set('g: %.1f, gdb: %.1f, anode output impedance: %d ohms, cathode output impedance: %d ohms' % (g, gdb, aoi, coi))
+            #Cga = self.specs.loc[self.specs['valve']  == valve ]['Cga'].iloc[0]
+            #CgAEA = self.specs.loc[self.specs['valve']  == valve ]['CgAEA'].iloc[0]
+            #cf = float(self.str_cf.get())
+            #total input capacitance = Cgaea +((Cf+Cga)*g)
+        else:
+            gcc=(mu*(1/((1/Ra)+(1/Rl))))/((1/((1/Ra)+(1/Rl)))+ra)
+            gdb=(math.log10(gcc))*20
+            aoi = (Ra*ra)/(Ra+ra)
+            self.str_calculations.set('g: %.1f, gdb: %.1f, anode output impedance: %d ohms' % (gcc, gdb, aoi))
+            #Cga = self.specs.loc[self.specs['valve']  == valve ]['Cga'].iloc[0]
+            #CgAEA = self.specs.loc[self.specs['valve']  == valve ]['CgAEA'].iloc[0]
+            #ck = float(self.str_ck.get())
+            #cf = float(self.str_cf.get())
+            #total input capacitance = Cgaea +((Cf+Cga)*gcc)
+
+        """
+        #sin cap
+        g=(mu*(1/((1/Ra)+(1/Rl))))/((1/((1/Ra)+(1/Rl)))+ra+(Rk*(mu+1)))
+        gdb=(LOG10(g))*20
+        anode output impedance =(Ra*(ra+(Rk*(mu+1))))/(Ra+ra+(Rk*(mu+1)))
+        cathode output impedance = 1/((1/((Ra+ra)/(mu+1)))+(1/Rk))
+        total input capacitance = Cgaea +((Cf+Cga)*g)
+        #####################################
+        #con cap
+        gcc=(mu*(1/((1/Ra)+(1/Rl))))/((1/((1/Ra)+(1/Rl)))+ra)
+        gdb=(LOG10(gcc))*20
+        anode output impedance = (Ra*ra)/(Ra+ra)
+        total input capacitance = Cgaea +((Cf+Cga)*gcc)
+        #####################################
+        """
 
 window = Tk()
+window.title('andmarti Load Line Plotter')
+window.state('zoomed')
 start = mclass(window)
 window.mainloop()
