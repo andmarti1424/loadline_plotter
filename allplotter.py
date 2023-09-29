@@ -1,10 +1,11 @@
 """
 TODO
 ----
-add schematic picture
+Cf Rg Co
 add capacitance
 freq. response calculations
 refresh lines without refreshing whole plot
+export
 """
 import pandas as pd
 import numpy as np
@@ -14,6 +15,7 @@ from scipy.interpolate import make_interp_spline, BSpline #interpolation
 from scipy.interpolate import griddata as gd
 from tkinter import *
 from tkinter import ttk
+from PIL import Image, ImageTk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -30,7 +32,7 @@ DEFAULT_RL = 1000000
 class mclass:
     def __init__(self,  window):
         self.window = window
-        self.fig = Figure(figsize=(13,8))
+        self.fig = Figure(figsize=(11,8))
         self.ax = self.fig.add_subplot(111)
 
         # read valve specs and grid lines from csv
@@ -57,21 +59,21 @@ class mclass:
         self.lbl_supply.grid(row=2, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_supply = StringVar()
         self.str_supply.set(DEFAULT_VSUPPLY)
-        self.etr_supply = Entry(window, textvariable=self.str_supply, font=('Courier New', 10), width=15)
+        self.etr_supply = Entry(window, textvariable=self.str_supply, font=('Courier New', 10), width=15, background='misty rose')
         self.etr_supply.grid(row=2, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
         self.lbl_Ra = Label(window, text="Ra, ohms", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_Ra.grid(row=3, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Ra = StringVar()
         self.str_Ra.set(DEFAULT_Ra)
-        self.etr_Ra = Entry(window, textvariable=self.str_Ra, font=('Courier New', 10), width=15)
+        self.etr_Ra = Entry(window, textvariable=self.str_Ra, font=('Courier New', 10), width=15, background='misty rose')
         self.etr_Ra.grid(row=3, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
         self.lbl_Rk = Label(window, text="Rk, ohms", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_Rk.grid(row=4, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Rk = StringVar()
         self.str_Rk.set(DEFAULT_Rk)
-        self.etr_Rk = Entry(window, textvariable=self.str_Rk, font=('Courier New', 10), width=15)
+        self.etr_Rk = Entry(window, textvariable=self.str_Rk, font=('Courier New', 10), width=15, background='misty rose')
         self.etr_Rk.grid(row=4, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
         self.lbl_Vq = Label(window, text="Vq, V", font=('Courier New', 10), background=self.window['bg'])
@@ -96,14 +98,14 @@ class mclass:
         self.lbl_Xmax.grid(row=8, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Xmax = StringVar()
         self.str_Xmax.set(DEFAULT_XMAX)
-        self.etr_Xmax = Entry(window, textvariable=self.str_Xmax, font=('Courier New', 10), width=15)
+        self.etr_Xmax = Entry(window, textvariable=self.str_Xmax, font=('Courier New', 10), width=15, background='misty rose')
         self.etr_Xmax.grid(row=8, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
         self.lbl_Ymax = Label(window, text="Ymax, mA", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_Ymax.grid(row=9, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Ymax = StringVar()
         self.str_Ymax.set(DEFAULT_YMAX)
-        self.etr_Ymax = Entry(window, textvariable=self.str_Ymax, font=('Courier New', 10), width=15)
+        self.etr_Ymax = Entry(window, textvariable=self.str_Ymax, font=('Courier New', 10), width=15, background='misty rose')
         self.etr_Ymax.grid(row=9, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
         self.lbl_ck = Label(window, text="Ck, pF", font=('Courier New', 10), background=self.window['bg'])
@@ -123,13 +125,18 @@ class mclass:
         self.lbl_inputsignal.grid(row=12, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_inputsignal = StringVar()
         self.str_inputsignal.set(DEFAULT_INPUTSIGNAL)
-        self.etr_inputsignal = Entry(window, textvariable=self.str_inputsignal, font=('Courier New', 10), width=15)
+        self.etr_inputsignal = Entry(window, textvariable=self.str_inputsignal, font=('Courier New', 10), width=15, background='misty rose')
         self.etr_inputsignal.grid(row=12, column=1, rowspan=1, sticky=W, padx=2, pady=5)
-
 
         # title
         self.title = Label(window, text='andmarti Load Line Plotter', fg='#1C5AAC', font=('Courier New', 24, 'bold'))
         self.title.grid(row=0, column=0, columnspan=5, padx=10, sticky=N)
+
+        # circuit
+        io = Image.open('images/circuit.jpg')
+        self.img = ImageTk.PhotoImage(io)
+        self.circuit = Label(window, image=self.img)
+        self.circuit.grid(row=6, column=2, rowspan=10, sticky=N)
 
         # plot
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.window)
@@ -183,10 +190,13 @@ class mclass:
 
         #BUTTONS
         self.button_quit = Button(window, text="QUIT", command=self.quit, font=('Courier New', 10))
+        #self.button_quit.grid(row=4, column=2)
         self.button_quit.place(x=40, y=680)
         self.button_start = Button(window, text="PLOT", command=self.change_state, font=('Courier New', 10))
+        ##self.button_start.grid(row=5, column=2)
         self.button_start.place(x=160, y=680)
         self.button_clear = Button(window, text="CLEAR", command=self.clear_chart, font=('Courier New', 10), state='normal')
+        ##self.button_clear.grid(row=6, column=2)
         self.button_clear.place(x=293, y=680)
         self.but_export = Button(window, text="EXPORT", command=self.export, font=('Courier New', 10))
         self.but_export.place(x=420, y=680)
@@ -216,7 +226,11 @@ class mclass:
 
         # Read XMAX and YMAX from specs
         #self.updateMaxXY()
+
         self.valve_changed(None)
+        #self.cmb_valve.focus_set()
+        self.etr_supply.icursor(len(self.str_supply.get()))
+        self.etr_supply.focus_set()
 
     def parameters_changed(self, event):
         self.change_state()
@@ -261,6 +275,10 @@ class mclass:
         self.change_state()
 
     def chk_input_signal_swing_click(self):
+        if self.chk_input_signal_swing_var.get() == 0:
+           self.etr_inputsignal.config({"background": "white"})
+        else:
+           self.etr_inputsignal.config({"background": "misty rose"})
         self.change_state()
 
     def quit(self):
@@ -472,8 +490,10 @@ class mclass:
     def input_swing(self):
         self.swingl = NONE
         self.swingr = NONE
+        inputVpp = self.str_inputsignal.get()
+        if len(inputVpp) == 0: return
         valve = self.str_valve.get()
-        inputVpp = float(self.str_inputsignal.get())
+        inputVpp = float(inputVpp)
         Vs = float(self.str_supply.get())
         Ra = float(self.str_Ra.get())
         lft_point_y = self.vgk+inputVpp/2000
@@ -607,6 +627,9 @@ class mclass:
         anode output impedance = (Ra*ra)/(Ra+ra)
         total input capacitance = Cgaea +((Cf+Cga)*gcc)
         #####################################
+        HF roll-off due to grid stopping (-3dB) (Hz) =1/(2*PI()*(Total Input Capacitance/1000000000000)*Rg)
+        LF output roll-off due to Co and Rl  (-3dB) (Hz) =1/(2*PI()*(Anode Output Impedance con CAP+Rl)*(Co/1000000000))
+        Half boost freq. Hz=(1/(2*PI()*Rk*(Ck/1000000)))*(1+((Rk*mu+1)/((2*(Ra+ra))+(0.5*(Rk*mu+1)))))^0.5
         """
 
 window = Tk()
