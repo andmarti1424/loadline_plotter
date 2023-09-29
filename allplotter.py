@@ -21,13 +21,13 @@ DEBUG = 0
 DEFAULT_VALVE = 'E88CC'
 DEFAULT_VSUPPLY = 265
 DEFAULT_Ra = 33000
-DEFAULT_Rk = 560
+DEFAULT_Rk = 470
 DEFAULT_INPUTSIGNAL = 2000
 DEFAULT_XMAX = 300
 DEFAULT_YMAX = 10
 DEFAULT_RL = 1000000
 DEFAULT_CO = 22
-DEFAULT_CK = 1
+#DEFAULT_CK = 1
 DEFAULT_RG = 68000
 DEFAULT_CF = 0
 
@@ -133,7 +133,7 @@ class mclass:
         self.lbl_ck = Label(window, text="Ck, uF", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_ck.grid(row=10, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_ck = StringVar()
-        self.str_ck.set(DEFAULT_CK)
+        #self.str_ck.set(DEFAULT_CK)
         self.etr_ck = Entry(window, textvariable=self.str_ck, font=('Courier New', 10), width=15)
         self.etr_ck.grid(row=10, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
@@ -180,7 +180,7 @@ class mclass:
         # bottom frame
         fm = Frame(window)
 
-        # cathode loadline
+        # cathode loadline check
         self.lbl_cathodeloadline = Label(fm, text="Cathode loadline", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_cathodeloadline.grid(row = 0, column = 0, pady=0, sticky='w')
         self.chk_cathodeloadline_var = IntVar()
@@ -189,7 +189,7 @@ class mclass:
         self.chk_cathodeloadline.select()
         self.chk_cathodeloadline.grid(row = 0, column = 1, columnspan=1, sticky='W')
 
-        # input signal  swing
+        # input signal swing check
         self.lbl_input_signal_swing = Label(fm, text="input signal swing", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_input_signal_swing.grid(row = 1, column = 0, pady=0, sticky='w')
         self.chk_input_signal_swing_var = IntVar()
@@ -198,39 +198,45 @@ class mclass:
         self.chk_input_signal_swing.select()
         self.chk_input_signal_swing.grid(row = 1, column = 1, columnspan=1, sticky='W')
 
-        # valve specs
+        # interpolation check
+        self.lbl_showinterpolation = Label(fm, text="Show interpolation", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_showinterpolation.grid(row = 2, column = 0, pady=0, sticky='w')
+        self.chk_showinterpolation_var = IntVar()
+        self.chk_showinterpolation = Checkbutton(fm, variable=self.chk_showinterpolation_var, onvalue = 1, offvalue = 0, height=1, font=('Courier New', 10),
+                                               command=self.chk_showinterpolation_click, background=self.window['bg'], width=1, anchor="w")
+        self.chk_showinterpolation.grid(row = 2, column = 1, columnspan=1, sticky='W')
+
+        # valve specs label
         self.str_specs = StringVar()
         self.str_specs.set("Specs: ")
         self.lbl_specs = Label(fm, textvariable=self.str_specs, font=('Courier New', 10), background=self.window['bg'])
-        self.lbl_specs.grid(row = 2, column = 0, columnspan=62, sticky='W')
+        self.lbl_specs.grid(row = 3, column = 0, columnspan=62, sticky='W')
 
-        # calculations
+        # calculations label
         self.str_calculations = StringVar()
         self.str_calculations.set("Calculations: ")
         self.lbl_calculations = Label(fm, textvariable=self.str_calculations, font=('Courier New', 10),  fg='green', background=self.window['bg'])
-        self.lbl_calculations.grid(row = 3, column = 0, columnspan=62, sticky='W')
+        self.lbl_calculations.grid(row = 4, column = 0, columnspan=62, sticky='W')
 
         # cursor position
         self.txt_coordinates = Text(fm, bd=0, bg=window['bg'], fg='red', height=1, wrap="none", state="normal", font=('Courier New', 10), background=self.window['bg'])
-        #self.txt_coordinates.grid(row=13, column=1, columnspan=2, rowspan=1, sticky=W, padx=2, pady=5)
-        self.txt_coordinates.grid(row = 4, column = 0, columnspan=10, sticky='W')
+        self.txt_coordinates.grid(row = 5, column = 0, columnspan=10, sticky='W')
         self.txt_coordinates.config(highlightthickness = 0, borderwidth=0)
         self.txt_coordinates.config(state=DISABLED)
 
         fm.grid(row=45, column=0, padx=2, pady=0, columnspan=10, sticky='W')
 
         #BUTTONS
-        self.button_quit = Button(window, text="QUIT", command=self.quit, font=('Courier New', 10))
-        #self.button_quit.grid(row=4, column=2)
-        self.button_quit.place(x=40, y=680)
-        self.button_start = Button(window, text="PLOT", command=self.change_state, font=('Courier New', 10))
-        ##self.button_start.grid(row=5, column=2)
-        self.button_start.place(x=160, y=680)
-        self.button_clear = Button(window, text="CLEAR", command=self.clear_chart, font=('Courier New', 10), state='normal')
-        ##self.button_clear.grid(row=6, column=2)
-        self.button_clear.place(x=293, y=680)
-        self.but_export = Button(window, text="EXPORT", command=self.export, font=('Courier New', 10))
-        self.but_export.place(x=420, y=680)
+        fmbut = Frame(window)
+        self.button_quit = Button(fmbut, text="QUIT", command=self.quit, font=('Courier New', 10))
+        self.button_quit.grid(row=0, column=0, padx=10)
+        self.button_start = Button(fmbut, text="PLOT", command=self.change_state, font=('Courier New', 10))
+        self.button_start.grid(row=0, column=1, padx=10)
+        self.button_clear = Button(fmbut, text="CLEAR", command=self.clear_chart, font=('Courier New', 10), state='normal')
+        self.button_clear.grid(row=0, column=2, padx=10)
+        self.but_export = Button(fmbut, text="EXPORT", command=self.export, font=('Courier New', 10))
+        self.but_export.grid(row=0, column=3, padx=10)
+        fmbut.grid(row=20, column=0, padx=50, pady=0, columnspan=5, sticky='W')
 
         # bind focus out events
         self.etr_Xmax.bind("<FocusOut>", self.parameters_changed)
@@ -307,6 +313,9 @@ class mclass:
 
     def export(self):
         pass
+
+    def chk_showinterpolation_click(self):
+        self.change_state()
 
     def chk_cathodeloadline_click(self):
         self.change_state()
@@ -570,9 +579,10 @@ class mclass:
         idx = np.argwhere(np.diff(np.sign(yloadline - ynew))).flatten()
 
         # left point of swing
+        if self.chk_showinterpolation_var.get() == 1:
         #if DEBUG:
         #    print('left swing: Vg=%s Ia=%s Va=%s' % (lft_point_y, ynew, interp_B))
-        #    self.ax.plot(interp_B, ynew, '-', color='green', linewidth=1)
+            self.ax.plot(interp_B, ynew, '-', color='green', linewidth=1)
         self.swingl = [lft_point_y, yloadline[idx][0], (yloadline[idx][0]-b)/a   ]
         #print(lft_point_y)
         #print(yloadline[idx][0])
@@ -585,9 +595,10 @@ class mclass:
         idx = np.argwhere(np.diff(np.sign(ynew - yloadline))).flatten()
 
         # right point of swing
+        if self.chk_showinterpolation_var.get() == 1:
         #if DEBUG:
         #    print('right swing: Vg=%s Ia=%s Va=%s' % (rht_point_y, ynew, interp_B))
-        #    self.ax.plot(interp_B, ynew, '-', color='green', linewidth=1)
+             self.ax.plot(interp_B, ynew, '-', color='green', linewidth=1)
         self.swingr = [rht_point_y, yloadline[idx][-1], (yloadline[idx][-1]-b)/a  ]
         #print(rht_point_y)
         #print(yloadline[idx][-1])
@@ -614,6 +625,7 @@ class mclass:
             #print('BC: %f' % BC)
             self.sechd = abs((AB - BC) / (2 * (AB+BC)) * 100)
 
+    # calculate gain, power diss, output impedance, etc.
     def calculate_gain_impedance(self):
         valve = self.str_valve.get()
         mu = self.specs.loc[self.specs['valve']  == valve ]['mu'].iloc[0]
@@ -633,7 +645,7 @@ class mclass:
             gdb=(math.log10(g))*20
             aoi =(Ra*(ra+(Rk*(mu+1))))/(Ra+ra+(Rk*(mu+1)))
             coi = 1/((1/((Ra+ra)/(mu+1)))+(1/Rk))
-            self.str_calculations.set('gain: %.1f %.1f dB, anode output impedance: %d ohms, cathode output impedance: %d ohms' % (g, gdb, aoi, coi))
+            self.str_calculations.set('A: %.1f %.1f dB, P: %.2f W, anode output impedance: %d ohms, cathode output impedance: %d ohms' % (g, gdb, self.vq * self.iq / 1000, aoi, coi))
             Cga = self.specs.loc[self.specs['valve']  == valve ]['Cga'].iloc[0]
             CgAEA = self.specs.loc[self.specs['valve']  == valve ]['CgAEA'].iloc[0]
             Cf = 0
@@ -645,7 +657,7 @@ class mclass:
             gcc=(mu*(1/((1/Ra)+(1/Rl))))/((1/((1/Ra)+(1/Rl)))+ra)
             gdb=(math.log10(gcc))*20
             aoi = (Ra*ra)/(Ra+ra)
-            self.str_calculations.set('gain: %.1f %.1f dB, anode output impedance: %d ohms' % (gcc, gdb, aoi))
+            self.str_calculations.set('A: %.1f %.1f dB, P: %.2f W, anode output impedance: %d ohms' % (gcc, gdb, self.vq * self.iq / 1000, aoi))
             Cga = self.specs.loc[self.specs['valve']  == valve ]['Cga'].iloc[0]
             CgAEA = self.specs.loc[self.specs['valve']  == valve ]['CgAEA'].iloc[0]
             Cf = 0
