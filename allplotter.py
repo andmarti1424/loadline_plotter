@@ -1,11 +1,9 @@
 """
 TODO
 ----
-Cf Rg Co
-add capacitance
 freq. response calculations
 refresh lines without refreshing whole plot
-export
+export df's
 """
 import pandas as pd
 import numpy as np
@@ -28,6 +26,10 @@ DEFAULT_INPUTSIGNAL = 2000
 DEFAULT_XMAX = 300
 DEFAULT_YMAX = 10
 DEFAULT_RL = 1000000
+DEFAULT_CO = 22
+DEFAULT_CK = 1
+DEFAULT_RG = 68000
+DEFAULT_CF = 0
 
 class mclass:
     def __init__(self,  window):
@@ -46,6 +48,25 @@ class mclass:
         window.columnconfigure(3, weight=1)
         window.columnconfigure(4, weight=1)
 
+        # title
+        self.title = Label(window, text='andmarti Load Line Plotter', fg='#1C5AAC', font=('Courier New', 24, 'bold'))
+        self.title.grid(row=0, column=0, columnspan=5, padx=10, sticky=N)
+
+        # circuit
+        io = Image.open('images/circuit.jpg')
+        self.img = ImageTk.PhotoImage(io)
+        self.circuit = Label(window, image=self.img)
+        self.circuit.grid(row=6, column=2, rowspan=10, sticky=N)
+
+        # plot
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.window)
+        self.canvas.get_tk_widget().grid(row=1, column=4, rowspan=44, columnspan=3, sticky=W, padx=0, pady=0)
+        self.canvas.mpl_connect('motion_notify_event', self.motion_hover)
+        self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
+        self.ax.set_ylabel('Ia, mA', fontsize=16, loc='center', labelpad=20)
+        self.ax.set_xlabel('Va, V', fontsize=16, loc='center',  labelpad=20)
+
+        # valve
         self.lbl_valve = Label(window, text="VALVE", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_valve.grid(row=1, column=0, sticky=W, padx=50, pady=5)
         self.str_valve = StringVar()
@@ -55,6 +76,7 @@ class mclass:
         self.cmb_valve.grid(row=1, column=1, sticky=W, padx=5, pady=5)
         self.cmb_valve.bind('<<ComboboxSelected>>', self.valve_changed)
 
+        # Vs
         self.lbl_supply = Label(window, text="Vsupply, V", font=('Courier New', 10), background=self.window['bg'], width=20, anchor='w')
         self.lbl_supply.grid(row=2, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_supply = StringVar()
@@ -108,9 +130,10 @@ class mclass:
         self.etr_Ymax = Entry(window, textvariable=self.str_Ymax, font=('Courier New', 10), width=15, background='misty rose')
         self.etr_Ymax.grid(row=9, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_ck = Label(window, text="Ck, pF", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_ck = Label(window, text="Ck, uF", font=('Courier New', 10), background=self.window['bg'])
         self.lbl_ck.grid(row=10, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_ck = StringVar()
+        self.str_ck.set(DEFAULT_CK)
         self.etr_ck = Entry(window, textvariable=self.str_ck, font=('Courier New', 10), width=15)
         self.etr_ck.grid(row=10, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
@@ -121,6 +144,7 @@ class mclass:
         self.etr_rl = Entry(window, textvariable=self.str_rl, font=('Courier New', 10), width=15)
         self.etr_rl.grid(row=11, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
+        # input signal
         self.lbl_inputsignal = Label(window, text="input signal, mVpp", font=('Courier New', 10), background=self.window['bg'], width=18)
         self.lbl_inputsignal.grid(row=12, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_inputsignal = StringVar()
@@ -128,23 +152,30 @@ class mclass:
         self.etr_inputsignal = Entry(window, textvariable=self.str_inputsignal, font=('Courier New', 10), width=15, background='misty rose')
         self.etr_inputsignal.grid(row=12, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        # title
-        self.title = Label(window, text='andmarti Load Line Plotter', fg='#1C5AAC', font=('Courier New', 24, 'bold'))
-        self.title.grid(row=0, column=0, columnspan=5, padx=10, sticky=N)
+        # Rg
+        self.lbl_rg = Label(window, text="Rg, ohms", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_rg.grid(row=13, column=0, rowspan=1, sticky=W, padx=50, pady=5)
+        self.str_rg = StringVar()
+        self.str_rg.set(DEFAULT_RG)
+        self.etr_rg = Entry(window, textvariable=self.str_rg, font=('Courier New', 10), width=15)
+        self.etr_rg.grid(row=13, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        # circuit
-        io = Image.open('images/circuit.jpg')
-        self.img = ImageTk.PhotoImage(io)
-        self.circuit = Label(window, image=self.img)
-        self.circuit.grid(row=6, column=2, rowspan=10, sticky=N)
+        # Co
+        self.lbl_co = Label(window, text="Co, nF", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_co.grid(row=14, column=0, rowspan=1, sticky=W, padx=50, pady=5)
+        self.str_co = StringVar()
+        self.str_co.set(DEFAULT_CO)
+        self.etr_co = Entry(window, textvariable=self.str_co, font=('Courier New', 10), width=15)
+        self.etr_co.grid(row=14, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        # plot
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self.window)
-        self.canvas.get_tk_widget().grid(row=1, column=4, rowspan=44, columnspan=3, sticky=W, padx=0, pady=0)
-        self.canvas.mpl_connect('motion_notify_event', self.motion_hover)
-        self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
-        self.ax.set_ylabel('Ia, mA', fontsize=16, loc='center', labelpad=20)
-        self.ax.set_xlabel('Va, V', fontsize=16, loc='center',  labelpad=20)
+        # Cf
+        self.lbl_cf = Label(window, text="Cf, pF", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_cf.grid(row=15, column=0, rowspan=1, sticky=W, padx=50, pady=5)
+        self.str_cf = StringVar()
+        self.str_cf.set(DEFAULT_CF)
+        self.etr_cf = Entry(window, textvariable=self.str_cf, font=('Courier New', 10), width=15)
+        self.etr_cf.grid(row=15, column=1, rowspan=1, sticky=W, padx=2, pady=5)
+
 
         # bottom frame
         fm = Frame(window)
@@ -218,6 +249,12 @@ class mclass:
         self.etr_rl.bind("<Return>", self.parameters_changed)
         self.etr_ck.bind("<Return>", self.parameters_changed)
         self.etr_inputsignal.bind("<Return>", self.parameters_changed)
+        self.etr_co.bind("<FocusOut>", self.parameters_changed)
+        self.etr_cf.bind("<FocusOut>", self.parameters_changed)
+        self.etr_rg.bind("<FocusOut>", self.parameters_changed)
+        self.etr_co.bind("<Return>", self.parameters_changed)
+        self.etr_cf.bind("<Return>", self.parameters_changed)
+        self.etr_rg.bind("<Return>", self.parameters_changed)
         #end of ui
 
         self.sechd = NONE
@@ -597,20 +634,25 @@ class mclass:
             aoi =(Ra*(ra+(Rk*(mu+1))))/(Ra+ra+(Rk*(mu+1)))
             coi = 1/((1/((Ra+ra)/(mu+1)))+(1/Rk))
             self.str_calculations.set('gain: %.1f %.1f dB, anode output impedance: %d ohms, cathode output impedance: %d ohms' % (g, gdb, aoi, coi))
-            #Cga = self.specs.loc[self.specs['valve']  == valve ]['Cga'].iloc[0]
-            #CgAEA = self.specs.loc[self.specs['valve']  == valve ]['CgAEA'].iloc[0]
-            #cf = float(self.str_cf.get())
-            #total input capacitance = Cgaea +((Cf+Cga)*g)
+            Cga = self.specs.loc[self.specs['valve']  == valve ]['Cga'].iloc[0]
+            CgAEA = self.specs.loc[self.specs['valve']  == valve ]['CgAEA'].iloc[0]
+            Cf = 0
+            if len(self.str_cf.get()) != 0 and self.can_convert_to_float(self.str_cf.get()) == TRUE:
+                Cf = float(self.str_cf.get())
+            total_input_capacitance = CgAEA +((Cf+Cga)*g)
+            self.str_calculations.set(self.str_calculations.get() + ', Total_Input_Capacitance: %d pf' % total_input_capacitance)
         else:
             gcc=(mu*(1/((1/Ra)+(1/Rl))))/((1/((1/Ra)+(1/Rl)))+ra)
             gdb=(math.log10(gcc))*20
             aoi = (Ra*ra)/(Ra+ra)
             self.str_calculations.set('gain: %.1f %.1f dB, anode output impedance: %d ohms' % (gcc, gdb, aoi))
-            #Cga = self.specs.loc[self.specs['valve']  == valve ]['Cga'].iloc[0]
-            #CgAEA = self.specs.loc[self.specs['valve']  == valve ]['CgAEA'].iloc[0]
-            #ck = float(self.str_ck.get())
-            #cf = float(self.str_cf.get())
-            #total input capacitance = Cgaea +((Cf+Cga)*gcc)
+            Cga = self.specs.loc[self.specs['valve']  == valve ]['Cga'].iloc[0]
+            CgAEA = self.specs.loc[self.specs['valve']  == valve ]['CgAEA'].iloc[0]
+            Cf = 0
+            if len(self.str_cf.get()) != 0 and self.can_convert_to_float(self.str_cf.get()) == TRUE:
+                Cf = float(self.str_cf.get())
+            total_input_capacitance = CgAEA +((Cf+Cga)*gcc)
+            self.str_calculations.set(self.str_calculations.get() + ', Total_Input_Capacitance: %d pf' % total_input_capacitance)
 
 
         """
