@@ -29,7 +29,7 @@ DEFAULT_RL = 1000000
 DEFAULT_CO = 22
 #DEFAULT_CK = 1
 DEFAULT_RG = 68000
-DEFAULT_CF = 0
+#DEFAULT_CF = 0
 
 class mclass:
     def __init__(self,  window):
@@ -67,113 +67,113 @@ class mclass:
         self.ax.set_xlabel('Va, V', fontsize=16, loc='center',  labelpad=20)
 
         # valve
-        self.lbl_valve = Label(window, text="VALVE", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_valve = Label(window, text="VALVE", font=('Courier New', 12), background=self.window['bg'])
         self.lbl_valve.grid(row=1, column=0, sticky=W, padx=50, pady=5)
         self.str_valve = StringVar()
         self.str_valve.set(DEFAULT_VALVE)
-        self.cmb_valve = ttk.Combobox(window, values=self.df['valve'].drop_duplicates().values.tolist(), textvariable=self.str_valve, font=('Courier New', 10), width=13)
+        self.cmb_valve = ttk.Combobox(window, values=self.df['valve'].drop_duplicates().values.tolist(), textvariable=self.str_valve, font=('Courier New', 12), width=13)
         self.cmb_valve['state'] = 'readonly'
         self.cmb_valve.grid(row=1, column=1, sticky=W, padx=5, pady=5)
         self.cmb_valve.bind('<<ComboboxSelected>>', self.valve_changed)
 
         # Vs
-        self.lbl_supply = Label(window, text="Vsupply, V", font=('Courier New', 10), background=self.window['bg'], width=20, anchor='w')
+        self.lbl_supply = Label(window, text="Vsupply, V", font=('Courier New', 12), background=self.window['bg'], width=20, anchor='w')
         self.lbl_supply.grid(row=2, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_supply = StringVar()
         self.str_supply.set(DEFAULT_VSUPPLY)
-        self.etr_supply = Entry(window, textvariable=self.str_supply, font=('Courier New', 10), width=15, background='misty rose')
+        self.etr_supply = Entry(window, textvariable=self.str_supply, font=('Courier New', 12), width=15, background='misty rose')
         self.etr_supply.grid(row=2, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_Ra = Label(window, text="Ra, ohms", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_Ra = Label(window, text="Ra, ohms", font=('Courier New', 12), background=self.window['bg'])
         self.lbl_Ra.grid(row=3, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Ra = StringVar()
         self.str_Ra.set(DEFAULT_Ra)
-        self.etr_Ra = Entry(window, textvariable=self.str_Ra, font=('Courier New', 10), width=15, background='misty rose')
+        self.etr_Ra = Entry(window, textvariable=self.str_Ra, font=('Courier New', 12), width=15, background='misty rose')
         self.etr_Ra.grid(row=3, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_Rk = Label(window, text="Rk, ohms", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_Rk = Label(window, text="Rk, ohms", font=('Courier New', 12), background=self.window['bg'])
         self.lbl_Rk.grid(row=4, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Rk = StringVar()
         self.str_Rk.set(DEFAULT_Rk)
-        self.etr_Rk = Entry(window, textvariable=self.str_Rk, font=('Courier New', 10), width=15, background='misty rose')
+        self.etr_Rk = Entry(window, textvariable=self.str_Rk, font=('Courier New', 12), width=15, background='misty rose')
         self.etr_Rk.grid(row=4, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_Vq = Label(window, text="Vq, V", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_Vq = Label(window, text="Vq, V", font=('Courier New', 12), background=self.window['bg'])
         self.lbl_Vq.grid(row=5, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Vq = StringVar()
-        self.lbl_Vqval = Label(window, textvariable=self.str_Vq, font=('Courier New', 10), width=15, anchor="w")
+        self.lbl_Vqval = Label(window, textvariable=self.str_Vq, font=('Courier New', 12), width=15, anchor="w")
         self.lbl_Vqval.grid(row=5, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_Iq = Label(window, text="Iq, mA", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_Iq = Label(window, text="Iq, mA", font=('Courier New', 12), background=self.window['bg'])
         self.lbl_Iq.grid(row=6, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Iq = StringVar()
-        self.lbl_Iqval = Label(window, textvariable=self.str_Iq, font=('Courier New', 10), width=15, anchor="w")
+        self.lbl_Iqval = Label(window, textvariable=self.str_Iq, font=('Courier New', 12), width=15, anchor="w")
         self.lbl_Iqval.grid(row=6, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_Vgk = Label(window, text="Vgk, V", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_Vgk = Label(window, text="Vgk, V", font=('Courier New', 12), background=self.window['bg'])
         self.lbl_Vgk.grid(row=7, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Vgk = StringVar()
-        self.lbl_Vgkval = Label(window, textvariable=self.str_Vgk, font=('Courier New', 10), width=15, anchor="w")
+        self.lbl_Vgkval = Label(window, textvariable=self.str_Vgk, font=('Courier New', 12), width=15, anchor="w")
         self.lbl_Vgkval.grid(row=7, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_Xmax = Label(window, text="Xmax, V", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_Xmax = Label(window, text="Xmax, V", font=('Courier New', 12), background=self.window['bg'])
         self.lbl_Xmax.grid(row=8, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Xmax = StringVar()
         self.str_Xmax.set(DEFAULT_XMAX)
-        self.etr_Xmax = Entry(window, textvariable=self.str_Xmax, font=('Courier New', 10), width=15, background='misty rose')
+        self.etr_Xmax = Entry(window, textvariable=self.str_Xmax, font=('Courier New', 12), width=15, background='misty rose')
         self.etr_Xmax.grid(row=8, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_Ymax = Label(window, text="Ymax, mA", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_Ymax = Label(window, text="Ymax, mA", font=('Courier New', 12), background=self.window['bg'])
         self.lbl_Ymax.grid(row=9, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_Ymax = StringVar()
         self.str_Ymax.set(DEFAULT_YMAX)
-        self.etr_Ymax = Entry(window, textvariable=self.str_Ymax, font=('Courier New', 10), width=15, background='misty rose')
+        self.etr_Ymax = Entry(window, textvariable=self.str_Ymax, font=('Courier New', 12), width=15, background='misty rose')
         self.etr_Ymax.grid(row=9, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_ck = Label(window, text="Ck, uF", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_ck = Label(window, text="Ck, uF", font=('Courier New', 12), background=self.window['bg'])
         self.lbl_ck.grid(row=10, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_ck = StringVar()
         #self.str_ck.set(DEFAULT_CK)
-        self.etr_ck = Entry(window, textvariable=self.str_ck, font=('Courier New', 10), width=15)
+        self.etr_ck = Entry(window, textvariable=self.str_ck, font=('Courier New', 12), width=15)
         self.etr_ck.grid(row=10, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
-        self.lbl_rl = Label(window, text="Rl, ohms", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_rl = Label(window, text="Rl, ohms", font=('Courier New', 12), background=self.window['bg'])
         self.lbl_rl.grid(row=11, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_rl = StringVar()
         self.str_rl.set(DEFAULT_RL)
-        self.etr_rl = Entry(window, textvariable=self.str_rl, font=('Courier New', 10), width=15)
+        self.etr_rl = Entry(window, textvariable=self.str_rl, font=('Courier New', 12), width=15)
         self.etr_rl.grid(row=11, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
         # input signal
-        self.lbl_inputsignal = Label(window, text="input signal, mVpp", font=('Courier New', 10), background=self.window['bg'], width=18)
+        self.lbl_inputsignal = Label(window, text="input signal, mVpp", font=('Courier New', 12), background=self.window['bg'], width=18)
         self.lbl_inputsignal.grid(row=12, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_inputsignal = StringVar()
         self.str_inputsignal.set(DEFAULT_INPUTSIGNAL)
-        self.etr_inputsignal = Entry(window, textvariable=self.str_inputsignal, font=('Courier New', 10), width=15, background='misty rose')
+        self.etr_inputsignal = Entry(window, textvariable=self.str_inputsignal, font=('Courier New', 12), width=15, background='misty rose')
         self.etr_inputsignal.grid(row=12, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
         # Rg
-        self.lbl_rg = Label(window, text="Rg, ohms", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_rg = Label(window, text="Rg, ohms", font=('Courier New', 12), background=self.window['bg'])
         self.lbl_rg.grid(row=13, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_rg = StringVar()
         self.str_rg.set(DEFAULT_RG)
-        self.etr_rg = Entry(window, textvariable=self.str_rg, font=('Courier New', 10), width=15)
+        self.etr_rg = Entry(window, textvariable=self.str_rg, font=('Courier New', 12), width=15)
         self.etr_rg.grid(row=13, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
         # Co
-        self.lbl_co = Label(window, text="Co, nF", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_co = Label(window, text="Co, nF", font=('Courier New', 12), background=self.window['bg'])
         self.lbl_co.grid(row=14, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_co = StringVar()
         self.str_co.set(DEFAULT_CO)
-        self.etr_co = Entry(window, textvariable=self.str_co, font=('Courier New', 10), width=15)
+        self.etr_co = Entry(window, textvariable=self.str_co, font=('Courier New', 12), width=15)
         self.etr_co.grid(row=14, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
         # Cf
-        self.lbl_cf = Label(window, text="Cf, pF", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_cf = Label(window, text="Cf, pF", font=('Courier New', 12), background=self.window['bg'])
         self.lbl_cf.grid(row=15, column=0, rowspan=1, sticky=W, padx=50, pady=5)
         self.str_cf = StringVar()
-        self.str_cf.set(DEFAULT_CF)
-        self.etr_cf = Entry(window, textvariable=self.str_cf, font=('Courier New', 10), width=15)
+        #self.str_cf.set(DEFAULT_CF)
+        self.etr_cf = Entry(window, textvariable=self.str_cf, font=('Courier New', 12), width=15)
         self.etr_cf.grid(row=15, column=1, rowspan=1, sticky=W, padx=2, pady=5)
 
 
@@ -181,45 +181,45 @@ class mclass:
         fm = Frame(window)
 
         # cathode loadline check
-        self.lbl_cathodeloadline = Label(fm, text="Cathode loadline", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_cathodeloadline = Label(fm, text="Cathode loadline", font=('Courier New', 12), background=self.window['bg'])
         self.lbl_cathodeloadline.grid(row = 0, column = 0, pady=0, sticky='w')
         self.chk_cathodeloadline_var = IntVar()
-        self.chk_cathodeloadline = Checkbutton(fm, variable=self.chk_cathodeloadline_var, onvalue = 1, offvalue = 0, height=1, font=('Courier New', 10),
+        self.chk_cathodeloadline = Checkbutton(fm, variable=self.chk_cathodeloadline_var, onvalue = 1, offvalue = 0, height=1, font=('Courier New', 12),
                                                command=self.chk_cathodeloadline_click, background=self.window['bg'], width=1, anchor="w")
         self.chk_cathodeloadline.select()
         self.chk_cathodeloadline.grid(row = 0, column = 1, columnspan=1, sticky='W')
 
         # input signal swing check
-        self.lbl_input_signal_swing = Label(fm, text="input signal swing", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_input_signal_swing = Label(fm, text="input signal swing", font=('Courier New', 12), background=self.window['bg'])
         self.lbl_input_signal_swing.grid(row = 1, column = 0, pady=0, sticky='w')
         self.chk_input_signal_swing_var = IntVar()
-        self.chk_input_signal_swing = Checkbutton(fm, variable=self.chk_input_signal_swing_var, onvalue = 1, offvalue = 0, height=1, font=('Courier New', 10),
+        self.chk_input_signal_swing = Checkbutton(fm, variable=self.chk_input_signal_swing_var, onvalue = 1, offvalue = 0, height=1, font=('Courier New', 12),
                                                command=self.chk_input_signal_swing_click, background=self.window['bg'], width=1, anchor="w")
         self.chk_input_signal_swing.select()
         self.chk_input_signal_swing.grid(row = 1, column = 1, columnspan=1, sticky='W')
 
         # interpolation check
-        self.lbl_showinterpolation = Label(fm, text="Show interpolation", font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_showinterpolation = Label(fm, text="Show interpolation", font=('Courier New', 12), background=self.window['bg'])
         self.lbl_showinterpolation.grid(row = 2, column = 0, pady=0, sticky='w')
         self.chk_showinterpolation_var = IntVar()
-        self.chk_showinterpolation = Checkbutton(fm, variable=self.chk_showinterpolation_var, onvalue = 1, offvalue = 0, height=1, font=('Courier New', 10),
+        self.chk_showinterpolation = Checkbutton(fm, variable=self.chk_showinterpolation_var, onvalue = 1, offvalue = 0, height=1, font=('Courier New', 12),
                                                command=self.chk_showinterpolation_click, background=self.window['bg'], width=1, anchor="w")
         self.chk_showinterpolation.grid(row = 2, column = 1, columnspan=1, sticky='W')
 
         # valve specs label
         self.str_specs = StringVar()
         self.str_specs.set("Specs: ")
-        self.lbl_specs = Label(fm, textvariable=self.str_specs, font=('Courier New', 10), background=self.window['bg'])
+        self.lbl_specs = Label(fm, textvariable=self.str_specs, font=('Courier New', 12), background=self.window['bg'])
         self.lbl_specs.grid(row = 3, column = 0, columnspan=62, sticky='W')
 
         # calculations label
         self.str_calculations = StringVar()
         self.str_calculations.set("Calculations: ")
-        self.lbl_calculations = Label(fm, textvariable=self.str_calculations, font=('Courier New', 10),  fg='green', background=self.window['bg'])
+        self.lbl_calculations = Label(fm, textvariable=self.str_calculations, font=('Courier New', 12),  fg='green', background=self.window['bg'])
         self.lbl_calculations.grid(row = 4, column = 0, columnspan=62, sticky='W')
 
         # cursor position
-        self.txt_coordinates = Text(fm, bd=0, bg=window['bg'], fg='red', height=1, wrap="none", state="normal", font=('Courier New', 10), background=self.window['bg'])
+        self.txt_coordinates = Text(fm, bd=0, bg=window['bg'], fg='red', height=1, wrap="none", state="normal", font=('Courier New', 12), background=self.window['bg'])
         self.txt_coordinates.grid(row = 5, column = 0, columnspan=10, sticky='W')
         self.txt_coordinates.config(highlightthickness = 0, borderwidth=0)
         self.txt_coordinates.config(state=DISABLED)
@@ -228,13 +228,13 @@ class mclass:
 
         #BUTTONS
         fmbut = Frame(window)
-        self.button_quit = Button(fmbut, text="QUIT", command=self.quit, font=('Courier New', 10))
+        self.button_quit = Button(fmbut, text="QUIT", command=self.quit, font=('Courier New', 12))
         self.button_quit.grid(row=0, column=0, padx=10)
-        self.button_start = Button(fmbut, text="PLOT", command=self.change_state, font=('Courier New', 10))
+        self.button_start = Button(fmbut, text="PLOT", command=self.change_state, font=('Courier New', 12))
         self.button_start.grid(row=0, column=1, padx=10)
-        self.button_clear = Button(fmbut, text="CLEAR", command=self.clear_chart, font=('Courier New', 10), state='normal')
+        self.button_clear = Button(fmbut, text="CLEAR", command=self.clear_chart, font=('Courier New', 12), state='normal')
         self.button_clear.grid(row=0, column=2, padx=10)
-        self.but_export = Button(fmbut, text="EXPORT", command=self.export, font=('Courier New', 10))
+        self.but_export = Button(fmbut, text="EXPORT", command=self.export, font=('Courier New', 12))
         self.but_export.grid(row=0, column=3, padx=10)
         fmbut.grid(row=20, column=0, padx=50, pady=0, columnspan=5, sticky='W')
 
@@ -637,7 +637,7 @@ class mclass:
         Rl = float(self.etr_rl.get())
 
         #sin cap
-        if len(self.etr_ck.get()) == 0:
+        if len(self.etr_ck.get()) == 0 or self.can_convert_to_float(self.etr_ck.get()) == False or self.etr_ck.get() == '0':
             if len(self.etr_Rk.get()) == 0: return
             if len(self.etr_Rk.get()) != 0 and self.can_convert_to_float(self.etr_Rk.get()) == False: return
             Rk = float(self.etr_Rk.get())
@@ -653,7 +653,7 @@ class mclass:
                 Cf = float(self.str_cf.get())
             total_input_capacitance = CgAEA +((Cf+Cga)*g)
             self.str_calculations.set(self.str_calculations.get() + ', Total_Input_Capacitance: %d pf' % total_input_capacitance)
-        else:
+        elif len(self.etr_ck.get()) != 0 and self.can_convert_to_float(self.etr_ck.get()) != False:
             gcc=(mu*(1/((1/Ra)+(1/Rl))))/((1/((1/Ra)+(1/Rl)))+ra)
             gdb=(math.log10(gcc))*20
             aoi = (Ra*ra)/(Ra+ra)
