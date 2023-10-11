@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import math
 from matplotlib import pyplot as plt
+from matplotlib.ticker import AutoMinorLocator
 from scipy.interpolate import make_interp_spline, BSpline #interpolation
 from scipy.interpolate import griddata as gd
 from tkinter import *
@@ -62,7 +63,7 @@ class mclass:
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.window)
         self.canvas.get_tk_widget().grid(row=1, column=4, rowspan=44, columnspan=3, sticky=W, padx=0, pady=0)
         self.canvas.mpl_connect('motion_notify_event', self.motion_hover)
-        self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
+        self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7, alpha=0.5)
         self.ax.set_ylabel('Ia, mA', fontsize=16, loc='center', labelpad=20)
         self.ax.set_xlabel('Va, V', fontsize=16, loc='center',  labelpad=20)
 
@@ -300,11 +301,21 @@ class mclass:
         DEFAULT_YMAX = d['DefaultYmax'].iloc[0]
         self.ax.set_ylim(0, d['DefaultYmax'].iloc[0])
         self.ax.set_xlim(0, d['DefaultXmax'].iloc[0])
+        if len(self.etr_Ymax.get()) != 0 and self.can_convert_to_float(self.etr_Ymax.get()) == False: return
+        if len(self.etr_Xmax.get()) != 0 and self.can_convert_to_float(self.etr_Xmax.get()) == False: return
+        self.ax.set_yticks(range(0, int(self.etr_Ymax.get())+1, 5))
+        self.ax.xaxis.set_minor_locator(AutoMinorLocator(5))
+        self.ax.yaxis.set_minor_locator(AutoMinorLocator(5))
+        self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
+        #  self.ax.xaxis.set_ticks(np.arange(0, float(self.etr_Xmax.get()), float(self.etr_Xmax.get())/5), fontsize=20, visible=True)
         self.str_Ymax.set(DEFAULT_YMAX)
         self.str_Xmax.set(DEFAULT_XMAX)
 
     def clear_chart(self):
         self.ax.clear() # clear previous plot !!!!
+        self.ax.set_yticks(range(0, int(self.etr_Ymax.get())+1, 5))
+        self.ax.xaxis.set_minor_locator(AutoMinorLocator(5))
+        self.ax.yaxis.set_minor_locator(AutoMinorLocator(5))
         self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
         self.ax.set_ylabel('Ia, mA', fontsize=16, loc='center', labelpad=20)
         self.ax.set_xlabel('Va, V', fontsize=16, loc='center',  labelpad=20)
@@ -403,8 +414,10 @@ class mclass:
 
         # setup plot
         self.ax.set_title(valve, fontsize=24, pad=30, weight='bold')
+        self.ax.set_yticks(range(0, int(self.etr_Ymax.get())+1, 5))
+        self.ax.xaxis.set_minor_locator(AutoMinorLocator(5))
+        self.ax.yaxis.set_minor_locator(AutoMinorLocator(5))
         self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
-        #self.ax.grid(which="both", axis='both', color='slategray', linestyle='--', linewidth=0.7)
         #self.ax.set_ylabel('Ia, mA', fontsize=16, loc='center')
         #self.ax.set_xlabel('Va, V', fontsize=16, loc='center')
 
