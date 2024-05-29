@@ -455,12 +455,16 @@ class mclass:
         data['x'] = (-data['b']+(data['b']**2-4*data['a']*(data['c']-data['y']))**0.5)/(2*data['a'])
         x_positive = data['x']
         y_positive = data['y']
+
         # extrapolation
-        xnew = np.linspace(x_positive.min(), x_positive.max(), 300)
+        interval = int(float(self.etr_supply.get()) / 0.01)
+        xnew = np.linspace(x_positive.min(), x_positive.max(), interval)
         spl = make_interp_spline(x_positive, y_positive, k=1)  # type: BSpline
         ynew = spl(xnew)
+
         if self.chk_cathodeloadline_var.get() == 1:
             self.ax.plot(xnew, ynew, '-', color='green', linewidth=1)
+            #self.ax.plot(data['x'], data['y'], '-', color='green', linewidth=1)
 
         # quiscient
         b = float(self.str_supply.get()) * 1000 / float(self.str_Ra.get())
@@ -492,7 +496,8 @@ class mclass:
 
             # try interpolation
             try:
-                xnew = np.linspace(x_positive.min(), x_positive.max(), 300)
+                interval = int(float(self.etr_supply.get()) / 0.01)
+                xnew = np.linspace(x_positive.min(), x_positive.max(), interval)
                 spl = make_interp_spline(x_positive, y_positive, k=2)  # type: BSpline
                 ynew = spl(xnew)
             except:
@@ -585,7 +590,7 @@ class mclass:
         #if DEBUG: print('swing - min: %, max: %' , xmin, xmax)
 
         interp_A = lft_point_y
-        interp_B = np.arange(xmin, xmax, 1) #step=1
+        interp_B = np.arange(xmin, xmax, 0.01) #step=0.1
         ynew = gd((da['curve'], da['x']), da['y'], (interp_A, interp_B), method='cubic')
         yloadline = interp_B * a + b
 
@@ -602,7 +607,7 @@ class mclass:
         #print((yloadline[idx][0]-b)/a)
 
         interp_A = rht_point_y
-        interp_B = np.arange(xmin, xmax, 1) #step=1
+        interp_B = np.arange(xmin, xmax, 0.01) #step=0.1
         ynew = gd((da['curve'], da['x']), da['y'], (interp_A, interp_B), method='cubic')
 
         idx = np.argwhere(np.diff(np.sign(ynew - yloadline))).flatten()
@@ -633,10 +638,17 @@ class mclass:
             B = float(self.str_Vq.get())
             C = self.swingr[2]
             AB = B - A
-            #print('AB: %f' % AB)
             BC = C - B
-            #print('BC: %f' % BC)
+            if DEBUG:
+                print('\n\n\nAB: %f' % AB)
+                print('BC: %f' % BC)
+                print('A: %f' % A)
+                print('B: %f' % B)
+                print('C: %f' % C)
             self.sechd = abs((AB - BC) / (2 * (AB+BC)) * 100)
+            #print('2: %f' % self.sechd)
+            #self.sechd = (( B - ((C+A)/2) ) / (C - A) ) * 100
+            #print('2: %f' % self.sechd)
 
     # calculate gain, power diss, output impedance, etc.
     def calculate_gain_impedance(self):
